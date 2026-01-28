@@ -1,6 +1,5 @@
-# Ignore opencode directories
+# Ignore opencode directory (OpenCode TypeScript)
 opencode/
-opencode_python/
 
 # Ignore IDE configs
 .idea/

@@ -1,0 +1,71 @@
+[build-system]
+requires = ["uv_build >=0.9.26,<0.10.0"]
+build-backend = "uv_build"
+
+[project]
+name = "opencode-python"
+version = "0.1.0"
+description = "OpenCode feature parity in Python - CLI + TUI for modern AI-assisted development"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+  {name = "OpenCode Python Contributors", email = "opencode@example.com"}
+]
+keywords = ["cli", "tui", "terminal", "ai", "development", "git", "automation"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development",
+]
+
+dependencies = [
+    "aiofiles>=24.0",
+    "aiohttp>=3.10",
+    "asyncio-extras>=0.21",
+    "click>=8.0",
+    "gitpython>=3.1",
+    "pendulum>=3.0",
+    "pydantic>=2.12",
+    "pydantic-settings>=2.0",
+    "rich>=13.0",
+    "ripgrep>=14.0",
+    "textual>=0.60",
+    "tiktoken>=0.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+    "faker>=28.0",
+]
+
+[project.scripts]
+opencode = "opencode_python.cli:cli"
+
+[dependency-groups]
+dev = ["pytest", "pytest-cov", "pytest-asyncio", "ruff", "mypy", "faker"]
+
+[tool.uv.sources]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=opencode_python --cov-report=term-missing"
+asyncio_mode = "auto"
