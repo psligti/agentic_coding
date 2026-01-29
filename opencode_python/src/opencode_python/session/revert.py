@@ -1,9 +1,8 @@
 """OpenCode Python - Session Revert System"""
 from __future__ import annotations
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any
 from pathlib import Path
 import subprocess
-import json
 import logging
 
 

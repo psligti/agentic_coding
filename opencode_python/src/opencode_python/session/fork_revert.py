@@ -9,7 +9,6 @@ import logging
 import time
 from typing import Optional, List
 from pathlib import Path
-import sys
 import importlib.util
 
 from ..core.models import Session, SnapshotPart, TextPart

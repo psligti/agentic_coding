@@ -11,7 +11,7 @@ from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 
 from opencode_python.core.session import Session
-from opencode_python.core.models import Session as SessionModel, Message as MessageModel, Part as PartModel
+from opencode_python.core.models import Part as PartModel
 
 
 logger = logging.getLogger(__name__)

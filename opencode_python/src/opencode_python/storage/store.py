@@ -1,6 +1,6 @@
 """OpenCode Python - Storage layer with JSON persistence"""
 from __future__ import annotations
-from typing import Optional, List
+from typing import Optional, List, Dict, Any, Callable
 from pathlib import Path
 import json
 import aiofiles
@@ -26,17 +26,18 @@ class Storage:
         """Ensure directory exists"""
         path.parent.mkdir(parents=True, exist_ok=True)
 
-    async def read(self, key: List[str]) -> Optional[dict]:
+    async def read(self, key: List[str]) -> Optional[Dict[str, Any]]:
         """Read JSON data by key"""
         try:
             path = await self._get_path(*key)
             async with aiofiles.open(path, mode="r") as f:
                 content = await f.read()
-                return json.loads(content)
+                data: Dict[str, Any] = json.loads(content)
+                return data
         except (FileNotFoundError, json.JSONDecodeError, ValidationError):
             return None
 
-    async def write(self, key: List[str], data: dict) -> None:
+    async def write(self, key: List[str], data: Dict[str, Any]) -> None:
         """Write JSON data by key"""
         path = await self._get_path(*key)
         await self._ensure_dir(path)
@@ -44,7 +45,7 @@ class Storage:
             content = json.dumps(data, indent=2, ensure_ascii=False)
             await f.write(content)
 
-    async def update(self, key: List[str], fn) -> dict:
+    async def update(self, key: List[str], fn: Callable[[Dict[str, Any]], None]) -> Dict[str, Any]:
         """Update JSON data by key with update function"""
         data = await self.read(key) or {}
         fn(data)
@@ -115,7 +116,7 @@ class SessionStorage(Storage):
 class MessageStorage(Storage):
     """Message-specific storage operations"""
 
-    async def get_message(self, session_id: str, message_id: str) -> Optional[dict]:
+    async def get_message(self, session_id: str, message_id: str) -> Optional[Dict[str, Any]]:
         """Get message by ID"""
         data = await self.read(["message", session_id, message_id])
         if data:
@@ -127,7 +128,7 @@ class MessageStorage(Storage):
         await self.write(["message", session_id, message.id], message.model_dump(mode="json"))
         return message
 
-    async def list_messages(self, session_id: str, reverse: bool = True) -> List[dict]:
+    async def list_messages(self, session_id: str, reverse: bool = True) -> List[Dict[str, Any]]:
         """List all messages for a session"""
         keys = await self.list(["message", session_id])
         messages = []
@@ -143,7 +144,7 @@ class MessageStorage(Storage):
 class PartStorage(Storage):
     """Part-specific storage operations"""
 
-    async def get_part(self, message_id: str, part_id: str) -> Optional[dict]:
+    async def get_part(self, message_id: str, part_id: str) -> Optional[Dict[str, Any]]:
         """Get part by ID"""
         data = await self.read(["part", message_id, part_id])
         if data:
@@ -160,7 +161,7 @@ class PartStorage(Storage):
         await self.write(["part", message_id, part.id], part.model_dump(mode="json"))
         return part
 
-    async def list_parts(self, message_id: str) -> List[dict]:
+    async def list_parts(self, message_id: str) -> List[Dict[str, Any]]:
         """List all parts for a message"""
         keys = await self.list(["part", message_id])
         parts = []

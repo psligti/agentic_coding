@@ -5,12 +5,8 @@ from pathlib import Path
 import json
 import logging
 import gzip
-from datetime import datetime
-import zipfile
-from dataclasses import dataclass
 
 from opencode_python.core.session import SessionManager
-from opencode_python.storage.store import SessionStorage
 from opencode_python.snapshot.index import GitSnapshot
 
 

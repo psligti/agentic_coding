@@ -5,8 +5,6 @@ from pathlib import Path
 import logging
 
 from opencode_python.core.settings import settings
-from opencode_python.core.models import Part
-from dataclasses import dataclass
 
 
 logger = logging.getLogger(__name__)
@@ -73,7 +71,6 @@ async def prune(session_id: str) -> int:
 
     # Load messages from storage
     from opencode_python.storage.store import MessageStorage
-    from opencode_python.core.session import SessionManager
 
     message_storage = MessageStorage(Path.cwd())
     msgs = []
@@ -151,7 +148,6 @@ async def process(
     Returns:
         "continue" if conversation can continue
     """
-    from opencode_python.storage.store import PartStorage, MessageStorage
 
     # Find parent user message
     user_message = None

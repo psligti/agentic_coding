@@ -31,13 +31,6 @@ from opencode_python.core.models import (
     ToolState,
     ReasoningPart,
     Part,
-    FilePart,
-    SnapshotPart,
-    PatchPart,
-    AgentPart,
-    SubtaskPart,
-    RetryPart,
-    CompactionPart,
 )
 
 
@@ -62,10 +55,10 @@ class SessionProcessor:
         self.current_text: Optional[TextPart] = None
         self.reasoning_map: Dict[str, ReasoningPart] = {}
 
-    async def process(self, stream: asyncio.Queue) -> str:
+    async def process(self, stream: asyncio.Queue[StreamEvent]) -> str:
         """
         Process streaming events and update message parts
-        
+
         Returns:
             "continue" if should continue conversation
         """
@@ -133,14 +126,12 @@ class SessionProcessor:
         
         elif isinstance(event, ToolInputDeltaEvent):
             if event.id in self.toolcalls:
-                part = self.toolcalls[event.id]
-                part.state.input.update(event.input_delta)
-        
+                self.toolcalls[event.id].state.input.update(event.input_delta)
+
         elif isinstance(event, ToolInputEndEvent):
             if event.id in self.toolcalls:
-                part = self.toolcalls[event.id]
-                await self._update_part(part)
-        
+                await self._update_part(self.toolcalls[event.id])
+
         elif isinstance(event, ToolCallEvent):
             self.toolcalls[event.tool_call_id] = ToolPart(
                 id=generate_id(),
@@ -154,31 +145,31 @@ class SessionProcessor:
                     input=event.input,
                 ),
             )
-        
+
         elif isinstance(event, ToolResultEvent):
             if event.tool_call_id in self.toolcalls:
-                part = self.toolcalls[event.tool_call_id]
-                part.state = ToolState(
+                tool_part = self.toolcalls[event.tool_call_id]
+                tool_part.state = ToolState(
                     status="completed",
-                    input=part.state.input,
+                    input=tool_part.state.input,
                     output=event.output,
-                    time_start=part.state.time_start,
+                    time_start=tool_part.state.time_start,
                     time_end=self._now() / 1000.0,
                     error=event.error,
                 )
-                await self._update_part(part)
-        
+                await self._update_part(tool_part)
+
         elif isinstance(event, ToolErrorEvent):
             if event.tool_call_id in self.toolcalls:
-                part = self.toolcalls[event.tool_call_id]
-                part.state = ToolState(
+                tool_part = self.toolcalls[event.tool_call_id]
+                tool_part.state = ToolState(
                     status="error",
-                    input=part.state.input,
-                    time_start=part.state.time_start,
+                    input=tool_part.state.input,
+                    time_start=tool_part.state.time_start,
                     time_end=self._now() / 1000.0,
                     error=event.error,
                 )
-                await self._update_part(part)
+                await self._update_part(tool_part)
         
         elif isinstance(event, TextStartEvent):
             self.current_text = TextPart(

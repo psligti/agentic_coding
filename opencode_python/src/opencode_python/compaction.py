@@ -7,11 +7,10 @@ messages with compaction agent, and prunes old tool outputs.
 
 import logging
 import uuid
-from typing import Optional, Dict, Any, List
+from typing import Optional, List
 from pathlib import Path
 
 from .core.settings import settings
-from .core.event_bus import bus, Events
 from .core.models import (
     Session,
     Message as MessageModel,
@@ -27,7 +26,6 @@ from .core.models import (
     RetryPart,
     CompactionPart,
 )
-from .providers import get_available_models
 
 
 logger = logging.getLogger(__name__)
@@ -172,7 +170,7 @@ class SessionCompactor:
             f"Current state: {user_content[:200]}",
             f"{tool_summary}",
             f"{changes_summary}",
-            f"Recent activity summary"
+            "Recent activity summary"
         ]
 
         full_summary = "\n".join(summary_parts)
