@@ -15,7 +15,12 @@ from opencode_python.core.settings import get_settings, get_storage_dir
 from opencode_python.core.session import SessionManager
 from opencode_python.session.export_import import ExportImportManager
 from opencode_python.storage.store import SessionStorage
-from opencode_python.tui.app import OpenCodeTUI
+from opencode_python.cli.handlers import (
+    CLIIOHandler,
+    CLIProgressHandler,
+    CLINotificationHandler,
+)
+from opencode_python.core.services.session_service import DefaultSessionService
 
 console = Console()
 
@@ -23,8 +28,7 @@ console = Console()
 def run_async(coro: Any) -> None:
     """Helper to run async function in sync context"""
     try:
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(coro)
+        asyncio.run(coro)
     except KeyboardInterrupt:
         sys.exit(0)
 
@@ -46,8 +50,18 @@ def list_sessions(directory: str | None) -> None:
 
         work_dir = Path(directory).expanduser() if directory else Path.cwd()
 
-        manager = SessionManager(storage, work_dir)
-        sessions = await manager.list_sessions()
+        io_handler = CLIIOHandler()
+        progress_handler = CLIProgressHandler()
+        notification_handler = CLINotificationHandler()
+
+        service = DefaultSessionService(
+            storage=storage,
+            io_handler=io_handler,
+            progress_handler=progress_handler,
+            notification_handler=notification_handler,
+        )
+
+        sessions = await service.list_sessions()
 
         table = Table()
         table.add_column("ID", style="cyan")
@@ -81,9 +95,6 @@ def run(message: tuple[str, ...], agent: str, model: str | None) -> None:
     console.print("[dim]\n--- Session started ---[/dim]")
     console.print("[dim]Use 'opencode tui' to launch TUI mode.[/dim]")
 
-    app = OpenCodeTUI()
-    app.run()
-
 
 @click.command()
 @click.argument("session_id", type=click.STRING)
@@ -98,8 +109,24 @@ def export_session(session_id: str, output: str | None, format: str) -> None:
         storage = SessionStorage(storage_dir)
         work_dir = Path.cwd()
 
-        session_manager = SessionManager(storage, work_dir)
+        io_handler = CLIIOHandler()
+        progress_handler = CLIProgressHandler()
+        notification_handler = CLINotificationHandler()
+
+        service = DefaultSessionService(
+            storage=storage,
+            io_handler=io_handler,
+            progress_handler=progress_handler,
+            notification_handler=notification_handler,
+        )
+
+        session = await service.get_session(session_id)
+        if not session:
+            console.print(f"[red]Session not found: {session_id}[/red]")
+            return
+
         git_snapshot = GitSnapshot(storage_dir, work_dir.name)
+        session_manager = SessionManager(storage, work_dir)
         manager = ExportImportManager(session_manager, git_snapshot)
 
         result = await manager.export_session(
@@ -123,10 +150,22 @@ def import_session(import_path: str, project_id: str | None) -> None:
     """Import a session from file"""
     async def _import() -> None:
         from opencode_python.snapshot.index import GitSnapshot
+        from opencode_python.storage.store import MessageStorage
 
         storage_dir = get_storage_dir()
         storage = SessionStorage(storage_dir)
         work_dir = Path.cwd()
+
+        io_handler = CLIIOHandler()
+        progress_handler = CLIProgressHandler()
+        notification_handler = CLINotificationHandler()
+
+        service = DefaultSessionService(
+            storage=storage,
+            io_handler=io_handler,
+            progress_handler=progress_handler,
+            notification_handler=notification_handler,
+        )
 
         session_manager = SessionManager(storage, work_dir)
         git_snapshot = GitSnapshot(storage_dir, work_dir.name)
@@ -147,6 +186,17 @@ def import_session(import_path: str, project_id: str | None) -> None:
 @click.command()
 def tui() -> None:
     """Launch Textual TUI interface"""
+    import warnings
+
+    warnings.warn(
+        "CLI → TUI launch is deprecated. "
+        "Use 'python -m opencode_python.tui.app' directly instead. "
+        "This feature will be removed in version 0.2.0.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    from opencode_python.tui.app import OpenCodeTUI
     app = OpenCodeTUI()
     app.run()
 
