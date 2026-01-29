@@ -4,13 +4,11 @@ from typing import Optional, List, TYPE_CHECKING
 from pathlib import Path
 import logging
 
-if TYPE_CHECKING:
-    import frontmatter
-
 try:
-    import frontmatter  # type: ignore
+    import frontmatter
 except ImportError:
     frontmatter = None
+    logging.warning("python-frontmatter package not installed. Frontmatter support disabled.")
 
 
 logger = logging.getLogger(__name__)

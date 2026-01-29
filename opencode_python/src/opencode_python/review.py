@@ -1,13 +1,10 @@
 """OpenCode Python - Review Loop System"""
 from __future__ import annotations
 from typing import Dict, Any, Optional, List
-from dataclasses import dataclass
 import logging
 import subprocess
 from pathlib import Path
 
-from opencode_python.core.event_bus import bus, Events
-from opencode_python.tools.framework import ToolContext
 
 
 logger = logging.getLogger(__name__)
@@ -43,7 +40,6 @@ class ReviewLoop:
         Returns:
             Review results with findings, status, and next steps
         """
-        from opencode_python.tools.builtin import BashTool, ReadTool, WriteTool
         
         # Get changed files
         changed_files = await self._get_changed_files()

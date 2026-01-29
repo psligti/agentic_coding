@@ -7,7 +7,6 @@ import re
 import logging
 
 from opencode_python.core.models import FileInfo
-from opencode_python.core.settings import get_settings
 
 
 logger = logging.getLogger(__name__)
@@ -142,7 +141,7 @@ class FileScanner:
             return files
 
         except FileNotFoundError:
-            logger.warning(f"Ripgrep not found - directory not a git repo")
+            logger.warning("Ripgrep not found - directory not a git repo")
             return []
 
     async def list_files(

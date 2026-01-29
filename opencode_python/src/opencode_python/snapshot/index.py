@@ -5,7 +5,6 @@ from pathlib import Path
 import subprocess
 import json
 import logging
-import shutil
 
 
 logger = logging.getLogger(__name__)

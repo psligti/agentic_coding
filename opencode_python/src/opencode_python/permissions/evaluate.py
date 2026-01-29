@@ -1,8 +1,7 @@
 """OpenCode Python - Permission model"""
 from __future__ import annotations
-from typing import Literal, List, Optional
+from typing import Literal, List
 from dataclasses import dataclass
-import fnmatch
 
 
 @dataclass
