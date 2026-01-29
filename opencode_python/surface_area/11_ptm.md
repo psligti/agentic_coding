@@ -434,7 +434,7 @@ This section maps each Surface Area item to:
 | Batch | 04_tools_and_agents.md | ❌ Not Implemented | ❌ No tests | Missing: parallel execution (1-25 tools), partial failure handling |
 | ApplyPatch | 04_tools_and_agents.md | ❌ Not Implemented | ❌ No tests | Missing: patch validation, application to specific files |
 | Lsp | 04_tools_and_agents.md | ❌ Not Implemented | ❌ No tests | Missing: LSP client wrapper, diagnostics formatting |
-| Skill | 04_tools_and_agents.md | ❌ Not Implemented | ❌ No tests | Missing: skill loading, validation |
+ | Skill | 04_tools_and_agents.md | ✅ Implemented | ✅ Tested | Complete: skill loading with SkillLoader, frontmatter parsing, validation |
 | PlanEnter/Exit | 04_tools_and_agents.md | ❌ Not Implemented | ❌ No tests | Missing: plan mode switching, user confirmation |
 | External-Directory | 04_tools_and_agents.md | ❌ Not Implemented | ❌ No tests | Missing: external access checks, path validation |
 | Invalid | 04_tools_and_agents.md | ❌ Not Implemented | ❌ No tests | Missing: error formatting, LLM guidance |
