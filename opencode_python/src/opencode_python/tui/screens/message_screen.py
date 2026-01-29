@@ -113,13 +113,25 @@ class MessageScreen(Screen):
     BINDINGS = [
         ("escape", "pop_screen", "Back"),
         ("ctrl+c", "quit", "Quit"),
+        ("home", "scroll_home", "Home"),
+        ("end", "scroll_end", "End"),
+        ("pageup", "scroll_page_up", "Page Up"),
+        ("pagedown", "scroll_page_down", "Page Down"),
+        ("pageleft", "scroll_to_top", "To Top"),
+        ("pageright", "scroll_to_bottom", "To Bottom"),
+        ("ctrl+u", "scroll_half_page_up", "Half Page Up"),
+        ("ctrl+d", "scroll_half_page_down", "Half Page Down"),
+        ("ctrl+b", "scroll_page_up", "Full Page Up"),
+        ("ctrl+f", "scroll_page_down", "Full Page Down"),
+        ("g", "jump_to_bottom", "Jump to Bottom"),
+        ("shift+g", "jump_to_top", "Jump to Top"),
     ]
 
     messages: reactive[List[Message]] = reactive([])
     session: Session
     ai_session: Optional[AISession] = None
     is_streaming: reactive[bool] = reactive(False)
-    messages_container: ScrollableContainer
+    messages_container: Optional[ScrollableContainer] = None
     _current_assistant_message: Optional[Message]
     _current_text_part: Optional[TextPart]
     _current_assistant_view: Optional[MessageView]
@@ -130,6 +142,8 @@ class MessageScreen(Screen):
         self._current_assistant_message = None
         self._current_text_part = None
         self._current_assistant_view = None
+        # Initialize messages_container attribute but don't create UI yet
+        self.messages_container = None
 
     def compose(self) -> ComposeResult:
         """Build the message screen UI"""
@@ -492,6 +506,46 @@ class MessageScreen(Screen):
         if message.role == "assistant" and is_streaming:
             self._current_assistant_view = message_view
 
+    def action_scroll_home(self) -> None:
+        """Scroll to top of messages"""
+        self.messages_container.scroll_to(animate=False)
+
+    def action_scroll_end(self) -> None:
+        """Scroll to end of messages"""
+        self._scroll_to_bottom()
+
+    def action_scroll_page_up(self) -> None:
+        """Scroll up one page"""
+        self.messages_container.scroll_page_up()
+
+    def action_scroll_page_down(self) -> None:
+        """Scroll down one page"""
+        self.messages_container.scroll_page_down()
+
+    def action_scroll_to_top(self) -> None:
+        """Scroll to top of messages"""
+        self.messages_container.scroll_to(animate=False)
+
+    def action_scroll_to_bottom(self) -> None:
+        """Scroll to bottom of messages"""
+        self._scroll_to_bottom()
+
+    def action_scroll_half_page_up(self) -> None:
+        """Scroll up by half a page"""
+        self.messages_container.scroll_up(percentage=50)
+
+    def action_scroll_half_page_down(self) -> None:
+        """Scroll down by half a page"""
+        self.messages_container.scroll_down(percentage=50)
+
+    def action_jump_to_top(self) -> None:
+        """Jump to top of messages"""
+        self.messages_container.scroll_to_top(animate=False)
+
+    def action_jump_to_bottom(self) -> None:
+        """Jump to bottom of messages"""
+        self._scroll_to_bottom()
+
     async def _update_assistant_display(self) -> None:
         """Update the currently streaming assistant message display"""
         if self._current_assistant_view and self._current_assistant_message:
@@ -503,7 +557,7 @@ class MessageScreen(Screen):
                     parts_data.append(p.model_dump())
                 else:
                     parts_data.append(p)
-
+            
             self._current_assistant_view.message_data = {
                 "role": "assistant",
                 "time": self._current_assistant_message.time,
@@ -516,7 +570,7 @@ class MessageScreen(Screen):
             self._scroll_to_bottom()
 
     async def _save_assistant_message(self) -> None:
-        """Save the assistant message to storage"""
+        """Save assistant message to storage"""
         from opencode_python.core.session import SessionManager
         from opencode_python.storage.store import SessionStorage
         from opencode_python.core.settings import get_storage_dir

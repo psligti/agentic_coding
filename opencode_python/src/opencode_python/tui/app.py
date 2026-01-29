@@ -58,6 +58,7 @@ class OpenCodeTUI(App[None]):
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("ctrl+c", "quit", "Quit"),
+        Binding("/", "open_command", "Open Command Palette"),
     ]
 
     session_table: DataTable[str]
@@ -254,3 +255,9 @@ class OpenCodeTUI(App[None]):
         """Quit application"""
         self.app.exit()
         logger.info("TUI exited")
+
+    def action_open_command(self) -> None:
+        """Open command palette dialog"""
+        from opencode_python.tui.dialogs import CommandPaletteDialog
+
+        self.push_screen(CommandPaletteDialog())
