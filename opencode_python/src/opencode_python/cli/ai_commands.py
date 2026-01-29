@@ -100,7 +100,6 @@ def run(message: str, model: Optional[str], provider: Optional[str], session: Op
     import asyncio
     from pathlib import Path
     from opencode_python.storage.store import SessionStorage
-    from ..core.models import Session
 
     provider_id = provider or "anthropic"
     api_key = settings.api_keys.get(provider_id, settings.api_keys.get("openai"))
@@ -147,7 +146,7 @@ def run(message: str, model: Optional[str], provider: Optional[str], session: Op
 
         # Process message
         await ai_session.process_message(message)
-        console.print(f"[green]Message processed successfully[/green]")
+        console.print("[green]Message processed successfully[/green]")
 
     asyncio.run(process())
 

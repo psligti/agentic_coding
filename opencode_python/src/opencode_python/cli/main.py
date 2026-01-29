@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import sys
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import click
 import pendulum
@@ -13,8 +13,6 @@ from rich.table import Table
 
 from opencode_python.core.settings import get_settings, get_storage_dir
 from opencode_python.core.session import SessionManager
-from opencode_python.git.commands import GitCommands
-from opencode_python.session.compaction import is_overflow, prune
 from opencode_python.session.export_import import ExportImportManager
 from opencode_python.storage.store import SessionStorage
 from opencode_python.tui.app import OpenCodeTUI
