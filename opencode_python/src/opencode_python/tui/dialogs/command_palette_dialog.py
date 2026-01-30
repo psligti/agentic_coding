@@ -69,24 +69,10 @@ class CommandPaletteDialog(ModalScreen[T]):
 
     def compose(self) -> ComposeResult:
         """Compose command palette dialog widgets."""
-        yield Vertical()
-
         if self.title:
             yield Label(self.title)
 
         yield Input(placeholder="Search commands...", id="command_search")
-
-        yield ScrollableContainer(id="command_list")
-        self._render_commands()
-
-        yield Static("Press Enter to execute, Escape to cancel")
-
-        yield Vertical()  # End Vertical container
-
-    def _render_commands(self) -> None:
-        """Render filtered command list."""
-        list_container = self.query_one("#command_list", ScrollableContainer)
-        list_container.remove_children()
 
         for command in self.filtered_commands:
             # Create command display
@@ -94,8 +80,9 @@ class CommandPaletteDialog(ModalScreen[T]):
             desc = command.get("description", "")
 
             # Use Static widget for command items
-            cmd_label = Static(f"  {title}  {desc}", id=f"cmd_{command['value']}")
-            list_container.mount(cmd_label)
+            yield Static(f"  {title}  {desc}", id=f"cmd_{command['value']}")
+
+        yield Static("Press Enter to execute, Escape to cancel")
 
     def filter_commands(self, query: str) -> None:
         """Filter commands by search query.
@@ -116,7 +103,7 @@ class CommandPaletteDialog(ModalScreen[T]):
             ]
 
         self._selected_index = 0
-        self._render_commands()
+        self._render_content()
 
     def select_command(self, value: str) -> Optional[str]:
         """Select a command by value.

@@ -268,7 +268,8 @@ class ConfirmDialog(BaseDialog):
     async def on_mount(self) -> None:
         """Called when dialog is mounted."""
         buttons = self.query_one("#confirm_buttons", Horizontal)
-        buttons.focus_first()
+        first_button = buttons.query_one(Button)
+        first_button.focus()
 
     def action_enter(self) -> None:
         """Handle Enter key - default to confirm."""
