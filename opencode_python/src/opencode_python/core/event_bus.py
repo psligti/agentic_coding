@@ -123,3 +123,8 @@ class Events:
     AGENT_EXECUTING = "agent.executing"
     AGENT_ERROR = "agent.error"
     AGENT_CLEANUP = "agent.cleanup"
+    # Observability events (Epic 8)
+    TIMELINE_LABEL = "timeline:label"
+    SESSION_BLOCKED = "session:blocked"
+    DESTRUCTIVE_REQUEST = "destructive:request"
+    DRYRUN_TOGGLE = "dryrun:toggle"

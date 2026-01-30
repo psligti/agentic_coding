@@ -66,6 +66,11 @@ class Settings(pydantic_settings.BaseSettings):
     # Permission settings
     permission_default_action: str = Field(default="ask", alias="PERMISSION_DEFAULT_ACTION")
 
+    # Observability & Safety settings (Epic 8)
+    dry_run_enabled: bool = Field(default=False, alias="DRY_RUN_ENABLED")
+    timeline_enabled: bool = Field(default=True, alias="TIMELINE_ENABLED")
+    destructive_confirmations: bool = Field(default=True, alias="DESTRUCTIVE_CONFIRMATIONS")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
