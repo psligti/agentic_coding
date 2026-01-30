@@ -1,0 +1,174 @@
+## CONTEXT
+
+I need to implement 8 TUI epics for a Python-based Coding Agent TUI. Each epic must be implemented in its own isolated git worktree and branch.
+
+### Project Details
+- Base branch: main
+- Current branch: wt/tui (we're already in a worktree)
+- Project root: /Users/parkersligting/develop/pt/agentic_coding/.worktrees/tui
+- Python project: opencode_python/ (uses pyproject.toml, pytest, ruff, mypy)
+- TUI library stack: rich, click, pydantic, pydantic-settings
+
+### Epic Specifications (from TUI_EPICS_ONE.md)
+
+Epic 1 - TUI Shell & Navigation:
+- Home screen with active provider/account, recent sessions, quick actions
+- Global command palette (Ctrl+P) for quick action access
+- Actions: New Session, Resume Session, Settings
+- Permission-aware command palette
+
+Epic 2 - Providers & Accounts:
+- Provider management (OpenAI, Anthropic, local): add/edit/remove
+- Provider connectivity testing with error messages
+- Account management per provider with secure credential storage
+- Active account switching
+
+Epic 3 - Sessions:
+- Create sessions with repo path, objectives, constraints
+- Repo path validation
+- Auto-save session state with non-intrusive indicator
+- Session resume with exact state restoration
+- Export to Markdown/JSON with secret redaction
+
+Epic 4 - Agents:
+- Agent profile selection (coder/reviewer/planner) with capability display
+- Prerequisite checking for agent tools
+- Per-session agent configuration (model, temperature, budget)
+- Audit trail for configuration changes
+
+Epic 5 - Skills:
+- Enable/disable skills (planning, refactor, tests, docs)
+- Skill-scoped prompts with structured output schemas
+- Runtime skill blocking (e.g., disable Shell Execution)
+
+Epic 6 - Tools:
+- Tool discovery panel with permission state (Allowed/Denied)
+- Tool execution approval/deny workflow
+- Tool execution log with inputs, outputs, diff previews
+
+Epic 7 - Themes & UX:
+- Theme switching (dark/light/high-contrast) with hot reload
+- Accessibility features (reduced motion)
+- Configurable keybindings with conflict detection
+- Restore defaults for keybindings
+- Font/layout density adjustments
+
+Epic 8 - Observability & Safety:
+- Session timeline with labeled events (Plan, Tool, Coding, Review)
+- Session status tracking (Active, Blocked, Completed)
+- Destructive action safeguards with confirmation dialogs
+- Dry-run mode for bulk changes
+
+### Design Patterns to Borrow from Posting TUI
+- Command palette (Ctrl+P)
+- Jump mode for fast focus switching (Ctrl+O + key)
+- Contextual help per widget (F1/Ctrl+?)
+- Theme system in YAML with hot reload
+- Config layering: config file + env vars + dotenv
+- Keymap overrides in config
+- Open in external editor (F4) and pager (F3)
+- Keyboard-centric workflow with autocompletion
+
+### Worktree + Branch Conventions
+- Worktrees root: ./.worktrees/
+- Branch naming: epic/<slug>
+- Worktree path: ./.worktrees/<slug>
+- Suggested slugs:
+  1. tui-shell-navigation
+  2. providers-accounts
+  3. sessions
+  4. agents
+  5. skills
+  6. tools
+  7. themes-ux
+  8. observability-safety
+
+## REQUIREMENTS
+
+### Phase 0: Preflight (NO CODING)
+1. Confirm repo is clean (or stash safely)
+2. Verify base branch is main
+3. Create ULTRAWORK_STATUS.md with tracking table
+
+### Phase 1: Worktree Creation (PARALLEL, NO CODING)
+For EACH epic:
+1. Create branch epic/<slug> off main
+2. Create worktree at ./.worktrees/<slug>
+3. Update ULTRAWORK_STATUS.md status to Created
+
+### Phase 2: Requirements Staging (per epic, NO CODE)
+For each epic worker:
+1. Extract acceptance criteria from gherkins
+2. Identify MVP pass scope (minimal UI + storage + behavior)
+3. Create checklist: Scenario -> Implementation notes -> Validation approach
+4. Update ULTRAWORK_STATUS.md status to Planned + 1-line summary
+
+### Phase 3: Epic Execution (CONCURRENT, MAXIMUM PARALLELISM)
+Delegate one Epic Worker subtask per epic, operating ONLY inside its worktree.
+
+Each Epic Worker MUST:
+a. Implement MVP for its scenarios
+b. Add/adjust tests OR provide deterministic validation checklist
+c. Run checks (pytest, ruff, mypy as applicable)
+d. Commit in worktree with message: epic(<slug>): <short summary>
+e. Update ULTRAWORK_STATUS.md with:
+   - Status (In Progress / Blocked / Done)
+   - Last Update timestamp
+   - Key files changed
+   - Next step or follow-up
+f. If blocked: exact error + smallest next action
+
+### Phase 4: Integration (CONDITIONAL)
+If conflicts arise:
+- Pause merging
+- Create integrate/epics worktree and branch
+- Merge epic branches in priority order
+- Resolve conflicts
+- Record in ULTRAWORK_STATUS.md
+
+### Phase 5: Final Output
+Return consolidated report with:
+- Table of epics (branch, worktree, completion %, PR readiness)
+- Per epic: summary, validation, risks, follow-ups
+- Clear PR opening instructions
+
+### Constraints
+- NO cross-epic edits in same worktree
+- Isolation mandatory: each epic in its own worktree/branch
+- NEVER rewrite history on remote branches
+- Prefer new branches over modifying existing
+- Deliverables: (1) runnable state, (2) tests/checklist, (3) summary, (4) PR-ready branch
+- Visibility: single ULTRAWORK_STATUS.md tracking all epics
+
+### Operational Rules
+- Execute commands from inside correct worktree directory
+- Never mix changes across epics in single commit
+- Small commits per epic checkpoint for reviewability
+- If design decision needed: propose 2-3 options, keep safe default
+
+## YOUR TASK
+
+Create a comprehensive plan that:
+
+1. Defines the parallel task graph with waves and dependencies
+   - Which tasks can run in parallel?
+   - Which tasks depend on others?
+   - Optimize for maximum concurrency
+
+2. Identifies potential conflicts across epics
+   - Which files might multiple epics touch?
+   - Are there shared modules that need coordination?
+   - Should we create a shared epic for common infrastructure?
+
+3. Provides structured TODO list with:
+   - Category + skills for each task
+   - Atomic, specific goals
+   - Clear dependencies
+
+4. Suggests epic execution order (if any dependency exists)
+   - Which epics should be done first?
+   - Which are independent?
+
+5. Identifies any blockers or risks we should address before starting
+
+Please analyze thoroughly and produce a detailed, parallelizable execution plan.

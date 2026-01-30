@@ -215,6 +215,7 @@ class Session(pd.BaseModel):
     parent_id: Optional[str] = None
     title: str
     version: str
+    agent: str = pd.Field(default="build", description="Current agent for the session")
     summary: Optional[MessageSummary] = None
     share: Optional[SessionShare] = None
     permission: Optional[List[Dict[str, Any]]] = None

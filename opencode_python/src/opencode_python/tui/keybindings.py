@@ -8,7 +8,7 @@ from textual.binding import Binding
 
 
 keybindings = [
-    Binding("q", "quit", "Quit", show=True),
+    Binding("ctrl+q", "quit", "Quit", show=True),
     Binding("ctrl+c", "quit", "Quit", show=False),
     Binding("arrow_up", "navigate_up", "Navigate Up", show=True),
     Binding("arrow_down", "navigate_down", "Navigate Down", show=True),

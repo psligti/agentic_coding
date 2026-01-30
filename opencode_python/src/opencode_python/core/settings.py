@@ -48,6 +48,7 @@ class Settings(pydantic_settings.BaseSettings):
     # TUI settings
     tui_theme: str = Field(default="auto", alias="TUI_THEME")
     tui_mouse_enabled: bool = Field(default=True, alias="TUI_MOUSE")
+    agent_default: str = Field(default="build", alias="AGENT_DEFAULT")
 
     # Git/Repository settings
     git_enabled: bool = Field(default=True, alias="GIT_ENABLED")

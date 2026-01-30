@@ -82,7 +82,7 @@ class SessionFooter(Static):
         content_parts = []
 
         # Add keyboard hints
-        hints = "[hints]q: quit | /: commands | Enter: confirm | Escape: cancel[/hints]"
+        hints = "[hints]ctrl+q: quit | /: commands | Enter: confirm | Escape: cancel[/hints]"
         content_parts.append(hints)
 
         # Add status if provided

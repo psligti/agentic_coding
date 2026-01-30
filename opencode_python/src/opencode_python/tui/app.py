@@ -59,7 +59,7 @@ class OpenCodeTUI(App[None]):
     """
 
     BINDINGS = [
-        Binding("q", "quit", "Quit"),
+        Binding("ctrl+q", "quit", "Quit"),
         Binding("ctrl+c", "quit", "Quit"),
         Binding("/", "open_command", "Open Command Palette"),
     ]
