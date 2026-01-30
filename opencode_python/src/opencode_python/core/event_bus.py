@@ -132,6 +132,7 @@ class Events:
     AGENT_ERROR = "agent.error"
     AGENT_CLEANUP = "agent.cleanup"
 <<<<<<< HEAD
+<<<<<<< HEAD
     AGENT_EXECUTE = "agent.execute"
     SKILL_ENABLED = "skill.enable"
     SKILL_DISABLED = "skill.disable"
@@ -143,3 +144,10 @@ class Events:
     AGENT_EXECUTE = "agent:execute"
     AGENT_COMPLETE = "agent:complete"
 >>>>>>> epic/agents
+=======
+    # Observability events (Epic 8)
+    TIMELINE_LABEL = "timeline:label"
+    SESSION_BLOCKED = "session:blocked"
+    DESTRUCTIVE_REQUEST = "destructive:request"
+    DRYRUN_TOGGLE = "dryrun:toggle"
+>>>>>>> epic/observability-safety

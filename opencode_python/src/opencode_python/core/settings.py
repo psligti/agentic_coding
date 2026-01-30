@@ -69,10 +69,17 @@ class Settings(pydantic_settings.BaseSettings):
     # Permission settings
     permission_default_action: str = Field(default="ask", alias="PERMISSION_DEFAULT_ACTION")
 
+<<<<<<< HEAD
     # Agent settings
     agent_default_model: str = Field(default="claude-3-5-sonnet-20241022", alias="AGENT_DEFAULT_MODEL")
     agent_default_temperature: float = Field(default=0.7, alias="AGENT_DEFAULT_TEMPERATURE")
     agent_default_budget: Optional[int] = Field(default=None, alias="AGENT_DEFAULT_BUDGET")
+=======
+    # Observability & Safety settings (Epic 8)
+    dry_run_enabled: bool = Field(default=False, alias="DRY_RUN_ENABLED")
+    timeline_enabled: bool = Field(default=True, alias="TIMELINE_ENABLED")
+    destructive_confirmations: bool = Field(default=True, alias="DESTRUCTIVE_CONFIRMATIONS")
+>>>>>>> epic/observability-safety
 
     model_config = SettingsConfigDict(
         env_file=".env",
