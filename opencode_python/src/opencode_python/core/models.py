@@ -231,3 +231,24 @@ class Session(pd.BaseModel):
     model_config = pd.ConfigDict(
         extra="forbid"
     )
+
+
+class DrawerModel(pd.BaseModel):
+    """Drawer widget state model with reactive properties
+
+    Manages the state of the side drawer widget including:
+    - Visibility state (open/closed)
+    - Width configuration (30-45% of terminal)
+    - Active tab selection (todos, subagents, navigator)
+    - Focus state for keyboard navigation
+
+    This model serves as the single source of truth for drawer state
+    and can be used with Textual's reactive system.
+    """
+
+    visible: bool = pd.Field(default=False, description="Whether drawer is currently visible")
+    width_percent: int = pd.Field(default=35, ge=30, le=45, description="Drawer width as percentage of terminal (30-45)")
+    active_tab: Literal["todos", "subagents", "navigator"] = pd.Field(default="todos", description="Currently active tab")
+    has_focus: bool = pd.Field(default=False, description="Whether drawer currently has keyboard focus")
+
+    model_config = pd.ConfigDict(extra="forbid")

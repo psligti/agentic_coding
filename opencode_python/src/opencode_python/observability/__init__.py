@@ -20,6 +20,13 @@ from opencode_python.observability.models import (
 from opencode_python.observability.timeline import TimelineManager, timeline_manager
 from opencode_python.observability.safety import DestructiveActionGuard, destructive_guard
 from opencode_python.observability.dryrun import DryRunManager, dryrun_manager
+from opencode_python.observability.confirmation_dialog import ConfirmationDialog
+from opencode_python.observability.error_collector import (
+    ErrorLevel,
+    ErrorRecord,
+    ErrorCollector,
+    error_collector,
+)
 
 __all__ = [
     "TimelineEvent",
@@ -35,4 +42,9 @@ __all__ = [
     "destructive_guard",
     "DryRunManager",
     "dryrun_manager",
+    "ConfirmationDialog",
+    "ErrorLevel",
+    "ErrorRecord",
+    "ErrorCollector",
+    "error_collector",
 ]

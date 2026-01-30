@@ -38,6 +38,7 @@ classifiers = [
     "pyyaml>=6.0",
     "rich>=13.0",
     "ripgrep>=14.0",
+    "textual>=7.5.0",
     "tiktoken>=0.8.0",
 ]
 
