@@ -1,4 +1,10 @@
 """OpenCode Python TUI Screens Package"""
 from opencode_python.tui.screens.message_screen import MessageScreen
+from opencode_python.tui.screens.agent_selection_screen import AgentSelectionScreen
+from opencode_python.tui.screens.session_settings_screen import SessionSettingsScreen
 
-__all__ = ["MessageScreen"]
+__all__ = [
+    "MessageScreen",
+    "AgentSelectionScreen",
+    "SessionSettingsScreen",
+]
