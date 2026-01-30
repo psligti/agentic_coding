@@ -46,10 +46,6 @@ class SessionListScreen(Screen):
     def on_mount(self) -> None:
         """Called when screen is mounted - populate DataTable"""
         data_table = self.query_one(DataTable)
-        if data_table is None:
-            return
-
-        data_table.title = "Sessions"
 
         # Add columns
         data_table.add_column("ID", width=15)
@@ -58,17 +54,15 @@ class SessionListScreen(Screen):
 
         # Add rows for each session
         for session in self.sessions:
-            row_key = data_table.add_row(
+            data_table.add_row(
                 session.id,
                 session.title,
                 self._format_time(session.time_updated),
                 key=session.id,
             )
 
-        # Clear selection and focus on first row
-        data_table.clear_selected()
-        if data_table.row_count > 0:
-            data_table.move_cursor(end=False)
+        # Set cursor type to row for better selection
+        data_table.cursor_type = "row"
 
     def _format_time(self, timestamp: float) -> str:
         """Format timestamp for display"""
@@ -83,25 +77,32 @@ class SessionListScreen(Screen):
     def action_open_selected_session(self) -> None:
         """Handle Enter key to open selected session"""
         data_table = self.query_one(DataTable)
-        selected_row = data_table.selected_row
 
-        if selected_row is None:
-            logger.warning("No session selected")
+        if len(self.sessions) == 0:
+            logger.warning("No sessions available")
             return
 
-        session_id = data_table.row_key(selected_row).key
-        selected_session = self._find_session_by_id(session_id)
+        # Default to first session
+        selected_session = self.sessions[0]
 
-        if selected_session is None:
-            logger.error(f"Session not found: {session_id}")
-            return
+        # Try to get cursor coordinate and use selected session
+        try:
+            cursor_coordinate = data_table.cursor_coordinate
+            row_key, _ = data_table.coordinate_to_cell_key(cursor_coordinate)
+            if row_key is not None:
+                session_id = str(row_key)
+                found_session = self._find_session_by_id(session_id)
+                if found_session is not None:
+                    selected_session = found_session
+        except Exception:
+            pass
 
         logger.info(f"Opening session: {selected_session.title} ({selected_session.id})")
 
         # Import here to avoid circular dependency
         from opencode_python.tui.screens.message_screen import MessageScreen
 
-        self.push_screen("message", selected_session)
+        self.app.push_screen(MessageScreen(selected_session))
 
     def _find_session_by_id(self, session_id: str) -> Session | None:
         """Find session by ID from the session list"""

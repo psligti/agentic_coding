@@ -130,3 +130,102 @@ def test_session_list_multiple_sessions():
 
     # Non-existent should return None
     assert screen._find_session_by_id("session-99") is None
+
+
+class TestSessionListScreenRendering:
+    """Tests for DataTable rendering with sessions"""
+
+    @pytest.mark.asyncio
+    async def test_data_table_renders_with_columns(self, sessions):
+        """Test that DataTable displays sessions with correct columns"""
+        from textual.app import App
+        from textual.widgets import DataTable
+
+        class TestApp(App):
+            def compose(self):
+                self._screen = SessionListScreen(sessions=sessions)
+                yield self._screen
+
+        app = TestApp()
+        async with app.run_test() as pilot:
+            # DataTable should exist
+            data_table = app.query_one(DataTable)
+            assert data_table is not None
+
+            # Check that rows exist by getting session data
+            row = data_table.get_row("session-1")
+            assert row is not None
+            assert len(row) == 3  # ID, Title, Time columns
+
+    @pytest.mark.asyncio
+    async def test_data_table_renders_sessions(self, sessions):
+        """Test that DataTable displays all sessions"""
+        from textual.app import App
+        from textual.widgets import DataTable
+
+        class TestApp(App):
+            def compose(self):
+                self._screen = SessionListScreen(sessions=sessions)
+                yield self._screen
+
+        app = TestApp()
+        async with app.run_test() as pilot:
+            data_table = app.query_one(DataTable)
+
+            # Should be able to get both sessions
+            row1 = data_table.get_row("session-1")
+            row2 = data_table.get_row("session-2")
+            assert row1 is not None
+            assert row2 is not None
+
+    @pytest.mark.asyncio
+    async def test_data_table_displays_session_data(self, sessions):
+        """Test that DataTable displays correct session data"""
+        from textual.app import App
+        from textual.widgets import DataTable
+
+        class TestApp(App):
+            def compose(self):
+                self._screen = SessionListScreen(sessions=sessions)
+                yield self._screen
+
+        app = TestApp()
+        async with app.run_test() as pilot:
+            data_table = app.query_one(DataTable)
+
+            # Check first row contains session-1 data
+            row_0 = data_table.get_row("session-1")
+            assert row_0 is not None
+            assert row_0[0] == "session-1"
+            assert row_0[1] == "Test Session 1"
+
+    @pytest.mark.asyncio
+    async def test_data_table_empty_sessions(self):
+        """Test that DataTable handles empty session list"""
+        from textual.app import App
+        from textual.widgets import DataTable
+
+        class TestApp(App):
+            def compose(self):
+                self._screen = SessionListScreen(sessions=[])
+                yield self._screen
+
+        app = TestApp()
+        async with app.run_test() as pilot:
+            data_table = app.query_one(DataTable)
+
+            # Should not crash with empty list, DataTable just won't have rows
+            pass  # If no exception, test passes
+
+
+class TestSessionListScreenNavigation:
+    """Tests for Enter key selection and navigation"""
+
+    def test_action_open_selected_session_exists(self, sessions):
+        """Test that action_open_selected_session method exists and is callable"""
+        screen = SessionListScreen(sessions=sessions)
+        assert hasattr(screen, 'action_open_selected_session')
+        assert callable(screen.action_open_selected_session)
+
+
+

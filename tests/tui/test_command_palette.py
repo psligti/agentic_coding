@@ -67,10 +67,18 @@ class TestCommandPaletteDialog:
     @pytest.mark.asyncio
     async def test_command_palette_search_filters_commands(self):
         """CommandPaletteDialog should filter commands by search query"""
+        class TestApp(App):
+            pass
+
+        app = TestApp()
         dialog = CommandPaletteDialog()
 
-        # Simulate typing "session" - should filter to show session-list
-        dialog.filter_commands("session")
+        async with app.run_test() as pilot:
+            app.push_screen(dialog)
+            await pilot.pause()
+
+            # Simulate typing "session" - should filter to show session-list
+            dialog.filter_commands("session")
 
         # Check filtered results
         assert dialog.filtered_commands is not None
