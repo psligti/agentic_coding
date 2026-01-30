@@ -7,7 +7,7 @@ manages permissions, and updates tool state.
 
 import asyncio
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from opencode_python.core.event_bus import bus, Events
 from opencode_python.tools.framework import ToolContext, ToolResult, ToolRegistry
@@ -19,11 +19,11 @@ logger = logging.getLogger(__name__)
 
 class ToolExecutionManager:
     """Manages tool execution from AI responses"""
-    
-    def __init__(self, session_id: str):
+
+    def __init__(self, session_id: str, tool_registry: Optional[ToolRegistry] = None):
         self.session_id = session_id
         self.active_calls: Dict[str, ToolContext] = {}
-        self.tool_registry = ToolRegistry()
+        self.tool_registry = tool_registry if tool_registry is not None else ToolRegistry()
     
     async def execute_tool_call(
         self,
@@ -275,6 +275,6 @@ class ToolExecutionManager:
             logger.info(f"Cleaning up tool call {call_id}")
 
 
-def create_tool_manager(session_id: str) -> ToolExecutionManager:
+def create_tool_manager(session_id: str, tool_registry: Optional[ToolRegistry] = None) -> ToolExecutionManager:
     """Factory function to create tool manager"""
-    return ToolExecutionManager(session_id)
+    return ToolExecutionManager(session_id, tool_registry)
