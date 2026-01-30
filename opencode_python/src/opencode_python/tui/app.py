@@ -263,9 +263,9 @@ class OpenCodeTUI(App[None]):
 
     def action_open_command(self) -> None:
         """Open command palette dialog"""
-        from opencode_python.tui.palette.command_palette import CommandPaletteDialog
+        from opencode_python.tui.palette.command_palette import CommandPalette
 
-        self.push_screen(CommandPaletteDialog(on_command=self._handle_command_palette_command))
+        self.push_screen(CommandPalette(on_command=self._handle_command_palette_command))
 
     def _handle_command_palette_command(self, command_value: str) -> None:
         """Handle command palette command selection

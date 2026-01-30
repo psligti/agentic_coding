@@ -135,7 +135,7 @@ class ProviderSettingsScreen(Screen):
         else:
             logger.warning(f"Failed to delete provider: {provider_id}")
 
-    def action_test_connection(self) -> None:
+    async def action_test_connection(self) -> None:
         """Handle 't' key - Test connection to selected provider"""
         provider_id = self._get_selected_provider_id()
         if not provider_id:

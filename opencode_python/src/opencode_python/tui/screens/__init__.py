@@ -11,7 +11,8 @@ from opencode_python.tui.screens.account_settings_screen import AccountSettingsS
 from opencode_python.tui.screens.skills_panel_screen import SkillsPanelScreen
 from opencode_python.tui.screens.tools_panel_screen import ToolsPanelScreen
 from opencode_python.tui.screens.tool_log_viewer_screen import ToolLogViewerScreen
-from opencode_python.tui.screens.keybinding_editor_screen import KeybindingEditorScreen
+# Temporarily excluded - KeybindingManager not implemented yet
+# from opencode_python.tui.screens.keybinding_editor_screen import KeybindingEditorScreen
 from opencode_python.tui.screens.theme_settings_screen import ThemeSettingsScreen
 from opencode_python.tui.screens.context_browser import ContextBrowser
 from opencode_python.tui.screens.diff_viewer import DiffViewer
@@ -29,7 +30,7 @@ __all__ = [
     "SkillsPanelScreen",
     "ToolsPanelScreen",
     "ToolLogViewerScreen",
-    "KeybindingEditorScreen",
+    # "KeybindingEditorScreen",  # Temporarily excluded
     "ThemeSettingsScreen",
     "ContextBrowser",
     "DiffViewer",

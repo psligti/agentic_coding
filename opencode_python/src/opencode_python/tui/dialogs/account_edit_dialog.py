@@ -6,7 +6,7 @@ from uuid import uuid4
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
 from textual.containers import Vertical
-from textual.widgets import Input, Label, Button, TextArea, Password
+from textual.widgets import Input, Label, Button, TextArea
 from textual.binding import Binding
 
 from opencode_python.providers_mgmt import Account, hash_api_key
@@ -72,10 +72,10 @@ class AccountEditDialog(ModalScreen[Optional[Account]]):
 
         yield Label("API Key:")
         if self._is_editing:
-            yield Password(placeholder="Enter new API key (or leave empty to keep existing)", id="input-api-key", password=False)
+            yield Input(placeholder="Enter new API key (or leave empty to keep existing)", id="input-api-key", password=False)
             yield Label("(Leave empty to keep existing API key)", id="api-key-hint")
         else:
-            yield Password(placeholder="Enter API key", id="input-api-key")
+            yield Input(placeholder="Enter API key", id="input-api-key", password=True)
 
         yield Label("Description (optional):")
         yield TextArea(placeholder="Account description", id="input-description", value=self.description_value)
@@ -97,7 +97,7 @@ class AccountEditDialog(ModalScreen[Optional[Account]]):
         """Handle Enter key - Save account"""
         try:
             name_input = self.query_one("#input-name", Input)
-            api_key_input = self.query_one("#input-api-key", Password)
+            api_key_input = self.query_one("#input-api-key", Input)
             description_input = self.query_one("#input-description", TextArea)
 
             name = name_input.value.strip()
