@@ -20,6 +20,8 @@ from .providers import (
     StreamEvent
 )
 from .ai.tool_execution import ToolExecutionManager
+from .tools.framework import ToolRegistry
+from .tools import create_builtin_registry
 
 
 logger = logging.getLogger(__name__)
@@ -32,7 +34,8 @@ class AISession:
         provider_id: str,
         model: str,
         api_key: Optional[str] = None,
-        session_manager=None
+        session_manager=None,
+        tool_registry: Optional[ToolRegistry] = None
     ):
         self.session = session
         self.provider_id = provider_id
@@ -47,7 +50,8 @@ class AISession:
             api_key_str = str(api_key_value) if api_key_value else ""
         self.provider = get_provider(provider_enum, api_key_str)
         self.model_info: Optional[ModelInfo] = None
-        self.tool_manager = ToolExecutionManager(session.id)
+        final_registry = tool_registry if tool_registry is not None else create_builtin_registry()
+        self.tool_manager = ToolExecutionManager(session.id, final_registry)
 
     async def _get_model_info(self, model: str) -> ModelInfo:
         if self.provider is None:
