@@ -78,6 +78,48 @@ async def get_all_tools() -> Dict[str, "Tool"]:
     return await registry.get_all()
 
 
+async def get_builtin_tools() -> Dict[str, "Tool"]:
+    """Get only built-in tools (bash, read, write, grep, glob)
+
+    Returns:
+        Dictionary of built-in tool instances keyed by tool ID
+    """
+    from .builtin import BashTool, ReadTool, WriteTool, GrepTool, GlobTool
+
+    builtin_tools = {
+        "bash": BashTool(),
+        "read": ReadTool(),
+        "write": WriteTool(),
+        "grep": GrepTool(),
+        "glob": GlobTool(),
+    }
+
+    return builtin_tools
+
+
+def create_builtin_registry() -> ToolRegistry:
+    """Create tool registry with only built-in tools (synchronous)
+
+    Returns:
+        ToolRegistry populated with built-in tools (bash, read, write, grep, glob)
+    """
+    from .builtin import BashTool, ReadTool, WriteTool, GrepTool, GlobTool
+
+    registry = ToolRegistry()
+    builtin_tools = [
+        ("bash", BashTool()),
+        ("read", ReadTool()),
+        ("write", WriteTool()),
+        ("grep", GrepTool()),
+        ("glob", GlobTool()),
+    ]
+
+    for tool_id, tool in builtin_tools:
+        registry.tools[tool_id] = tool
+
+    return registry
+
+
 __all__ = [
     # Framework
     "ToolRegistry",
@@ -105,5 +147,7 @@ __all__ = [
     "CompactionTool",
     # Factory functions
     "create_complete_registry",
+    "create_builtin_registry",
     "get_all_tools",
+    "get_builtin_tools",
 ]
