@@ -8,6 +8,8 @@ from typing import Dict, Type, cast
 import logging
 
 from .framework import ToolRegistry, Tool
+from .models import ToolPermission, ToolExecutionLog, ToolDiscovery
+from .storage import ToolPermissionStorage, ToolExecutionLogStorage
 from .builtin import (
     BashTool,
     ReadTool,
@@ -82,6 +84,13 @@ __all__ = [
     # Framework
     "ToolRegistry",
     "Tool",
+    # Models
+    "ToolPermission",
+    "ToolExecutionLog",
+    "ToolDiscovery",
+    # Storage
+    "ToolPermissionStorage",
+    "ToolExecutionLogStorage",
     # Builtin tools
     "BashTool",
     "ReadTool",

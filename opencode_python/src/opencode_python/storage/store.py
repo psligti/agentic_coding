@@ -30,6 +30,8 @@ class Storage:
         """Read JSON data by key"""
         try:
             path = await self._get_path(*key)
+            if not path.suffix:
+                path = path.with_suffix(".json")
             async with aiofiles.open(path, mode="r") as f:
                 content = await f.read()
                 data: Dict[str, Any] = json.loads(content)
@@ -40,6 +42,8 @@ class Storage:
     async def write(self, key: List[str], data: Dict[str, Any]) -> None:
         """Write JSON data by key"""
         path = await self._get_path(*key)
+        if not path.suffix:
+            path = path.with_suffix(".json")
         await self._ensure_dir(path)
         async with aiofiles.open(path, mode="w") as f:
             content = json.dumps(data, indent=2, ensure_ascii=False)
@@ -56,6 +60,8 @@ class Storage:
         """Remove data by key"""
         try:
             path = await self._get_path(*key)
+            if not path.suffix:
+                path = path.with_suffix(".json")
             path.unlink()
             return True
         except FileNotFoundError:
@@ -69,7 +75,7 @@ class Storage:
         keys = []
         for path in prefix_path.rglob("*.json"):
             relative = path.relative_to(self.storage_dir)
-            keys.append(list(relative.parts)[0:len(prefix)] + [relative.stem])
+            keys.append(list(relative.parts)[0:len(prefix)] + [path.stem])
             keys.sort()
         return keys
 
