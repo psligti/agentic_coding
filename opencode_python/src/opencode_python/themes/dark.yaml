@@ -1,0 +1,39 @@
+metadata:
+  name: Dark
+  slug: dark
+  description: Deep dark theme for comfortable terminal viewing
+  author: OpenCode
+  version: 1.0.0
+  preview_colors:
+    bg: "#0a0a0a"
+    fg: "#f5f5f5"
+    accent: "#56b6c2"
+
+primary: "#56b6c2"
+secondary: "#5c9cf5"
+accent: "#9d7cd8"
+
+error: "#e06c75"
+warning: "#f5a742"
+success: "#7fd88f"
+info: "#56b6c2"
+
+text: "#f5f5f5"
+text_muted: "#a0a0a0"
+text_selection: "#2968c3"
+
+background: "#0a0a0a"
+background_panel: "#141414"
+background_element: "#1e1e1e"
+background_menu: "#1e1e1e"
+
+border: "#484848"
+border_active: "#606060"
+border_subtle: "#3c3c3c"
+
+font_family: monospace
+font_size: 14
+line_height: 1.4
+
+animations_enabled: true
+reduced_motion: false

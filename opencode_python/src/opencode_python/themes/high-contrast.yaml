@@ -1,0 +1,39 @@
+metadata:
+  name: High Contrast
+  slug: high-contrast
+  description: Maximum contrast for accessibility and visibility
+  author: OpenCode
+  version: 1.0.0
+  preview_colors:
+    bg: "#000000"
+    fg: "#ffffff"
+    accent: "#ffff00"
+
+primary: "#ffffff"
+secondary: "#00ffff"
+accent: "#ffff00"
+
+error: "#ff0000"
+warning: "#ff00ff"
+success: "#00ff00"
+info: "#0000ff"
+
+text: "#ffffff"
+text_muted: "#cccccc"
+text_selection: "#333333"
+
+background: "#000000"
+background_panel: "#000000"
+background_element: "#111111"
+background_menu: "#000000"
+
+border: "#ffffff"
+border_active: "#ffffff"
+border_subtle: "#888888"
+
+font_family: monospace
+font_size: 16
+line_height: 1.5
+
+animations_enabled: false
+reduced_motion: true

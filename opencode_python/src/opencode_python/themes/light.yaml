@@ -1,0 +1,39 @@
+metadata:
+  name: Light
+  slug: light
+  description: Clean light theme for bright environments
+  author: OpenCode
+  version: 1.0.0
+  preview_colors:
+    bg: "#ffffff"
+    fg: "#363644"
+    accent: "#007f95"
+
+primary: "#007f95"
+secondary: "#7b5bb6"
+accent: "#d68c27"
+
+error: "#d1383d"
+warning: "#a44200"
+success: "#036e43"
+info: "#007f95"
+
+text: "#363644"
+text_muted: "#70707d"
+text_selection: "#b3d9e8"
+
+background: "#ffffff"
+background_panel: "#fbfcfd"
+background_element: "#f4f5f9"
+background_menu: "#f4f5f9"
+
+border: "#d0d0d0"
+border_active: "#b0b0b0"
+border_subtle: "#e0e0e0"
+
+font_family: monospace
+font_size: 14
+line_height: 1.4
+
+animations_enabled: true
+reduced_motion: false
