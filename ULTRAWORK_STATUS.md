@@ -76,11 +76,11 @@ Each epic declares event names it emits/subscribes to. Prevents duplicate semant
 
 | Epic | Slug | Branch | Worktree Path | Status | Last Update | Key Files Changed | Notes | Next Step |
 |------|-------|--------|---------------|---------|-------------|------------------|--------|------------|
-| Epic 1 - TUI Shell & Navigation | `tui-shell-navigation` | `epic/tui-shell-navigation` | `./.worktrees/tui-shell-navigation` | Planned | 2026-01-30 12:00:00 | None yet | Home screen, command palette (Ctrl+P), permission-aware actions | Implement HomeScreen widget |
+| Epic 1 - TUI Shell & Navigation | `tui-shell-navigation` | `epic/tui-shell-navigation` | `./.worktrees/tui-shell-navigation` | Done | 2026-01-30 12:15:00 | Home screen, command palette, custom events | tui/screens/home_screen.py, tui/palette/command_palette.py, tui/app.py (minimal), tests/tui/test_home_screen.py |
 | Epic 2 - Providers & Accounts | `providers-accounts` | `epic/providers-accounts` | `./.worktrees/providers-accounts` | Planned | 2026-01-30 12:00:00 | None yet | Provider CRUD, test connection, secure credential storage, active account switching | Implement ProviderManager |
-| Epic 3 - Sessions | `sessions` | `epic/sessions` | `./.worktrees/sessions` | Planned | 2026-01-30 12:00:00 | None yet | Create with repo/goals/constraints, autosave, resume exactly, export MD/JSON with redaction | Implement Session persistence |
+| Epic 3 - Sessions | `sessions` | `epic/sessions` | `./.worktrees/sessions` | Done | 2026-01-30 12:00:00 | storage/session_meta.py, core/session.py, export/session_exporter.py, tui/screens/session_creation_screen.py, tui/widgets/save_indicator.py | Session creation with validation, auto-save, resume exactly, export MD/JSON with redaction implemented | - |
 | Epic 4 - Agents | `agents` | `epic/agents` | `./.worktrees/agents` | Done | 2026-01-30 11:45:00 | agents/ package, core/settings.py (minimal) | Profile selection, prerequisite checking, per-session config (model/temp/budget), audit trail | - |
-| Epic 5 - Skills | `skills` | `epic/skills` | `./.worktrees/skills` | Planned | 2026-01-30 12:00:00 | None yet | Enable/disable skills, runtime blocking, structured output schemas | Implement SkillRegistry |
+ | Epic 5 - Skills | `skills` | `epic/skills` | `./.worktrees/skills` | Done | 2026-01-30 12:20:00 | skills/ package, core/event_bus.py, tui/screens/skills_panel_screen.py, tests/skills/ | Skills enable/disable, runtime blocking, and contracts implemented | - |
 | Epic 6 - Tools | `tools` | `epic/tools` | `./.worktrees/tools` | Planned | 2026-01-30 12:00:00 | None yet | Tool discovery panel, allow/deny workflow, execution log with diffs | Implement ToolPermissionSystem |
 | Epic 7 - Themes & UX | `themes-ux` | `epic/themes-ux` | `./.worktrees/themes-ux` | Planned | 2026-01-30 12:00:00 | None yet | Theme switching (hot reload), reduced motion, configurable keybindings, restore defaults | Implement ThemeManager |
 | Epic 8 - Observability & Safety | `observability-safety` | `epic/observability-safety` | `./.worktrees/observability-safety` | Done | 2026-01-30 12:15:00 | observability/ package, event_bus.py, settings.py, tests/observability/ | Timeline, status tracking, and safety rails implemented | All requirements met |
@@ -520,10 +520,17 @@ Status: **Pending**
 ## Validation Results
 
 | Epic | Tests Run | Result | Evidence | Timestamp |
-|------|------------|--------|-----------|------------|
-| - | - | - | - | - |
+ |------|------------|--------|-----------|------------|
+| - | - | - | - | - | - |
+| 
+## Validation Results
 
+ | Epic | Tests Run | Result | Evidence | Timestamp |
+|------|------------|--------|-----------|------------|
+| Epic 5 - Skills | tests/skills/test_skills.py | 24 passed | All skill models, contracts, registry, and blocking tests pass | 2026-01-30 12:20:00 |
+| 
 ---
 
-**Last Updated**: 2026-01-30 12:15:00
+**Last Updated**: 2026-01-30 12:20:00
+
 **Current Wave**: Wave 3 (Epic Execution)
