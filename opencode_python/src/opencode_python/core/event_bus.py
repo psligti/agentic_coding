@@ -131,8 +131,15 @@ class Events:
     AGENT_EXECUTING = "agent.executing"
     AGENT_ERROR = "agent.error"
     AGENT_CLEANUP = "agent.cleanup"
+<<<<<<< HEAD
     AGENT_EXECUTE = "agent.execute"
     SKILL_ENABLED = "skill.enable"
     SKILL_DISABLED = "skill.disable"
     SKILL_BLOCKED = "skill.block"
     SKILL_EXECUTE = "skill.execute"
+=======
+    AGENT_PROFILE_SELECT = "agent:profile:select"
+    AGENT_CONFIG_UPDATE = "agent:config:update"
+    AGENT_EXECUTE = "agent:execute"
+    AGENT_COMPLETE = "agent:complete"
+>>>>>>> epic/agents
