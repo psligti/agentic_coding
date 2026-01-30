@@ -85,13 +85,82 @@ class ToolRegistry(ToolRegistry):
     
     async def execute(self, tool_name: str, args: Dict, ctx: ToolContext) -> ToolResult:
         """Execute tool by name"""
+        import time
+        import uuid
+
+        from opencode_python.core.event_bus import Events, bus
+
         tool = self.tools.get(tool_name.lower())
         if not tool:
             logger.error(f"Tool {tool_name} not found")
+            await ctx.log_tool_execution(
+                tool_name=tool_name,
+                parameters=args,
+                output=None,
+                success=False,
+                error=f"Tool {tool_name} is not available",
+            )
             return ToolResult(
                 title=f"Unknown tool: {tool_name}",
                 output=f"Tool {tool_name} is not available",
                 metadata={"error": f"unknown_tool: {tool_name}"}
             )
-        
-        return await tool.execute(args, ctx)
+
+        ctx.tool_name = tool_name
+        ctx.call_id = str(uuid.uuid4())
+        ctx.time_created = time.time()
+
+        await bus.publish(Events.TOOL_EXECUTE, {
+            "session_id": ctx.session_id,
+            "message_id": ctx.message_id,
+            "tool_name": tool_name,
+            "call_id": ctx.call_id,
+            "parameters": args,
+        })
+
+        try:
+            result = await tool.execute(args, ctx)
+            ctx.time_finished = time.time()
+
+            await ctx.log_tool_execution(
+                tool_name=tool_name,
+                parameters=args,
+                output=result.output,
+                success=True,
+                diff=result.metadata.get("diff") if result.metadata else None,
+            )
+
+            await bus.publish(Events.TOOL_COMPLETED, {
+                "session_id": ctx.session_id,
+                "message_id": ctx.message_id,
+                "tool_name": tool_name,
+                "call_id": ctx.call_id,
+                "title": result.title,
+            })
+
+            return result
+        except Exception as e:
+            ctx.time_finished = time.time()
+            logger.error(f"Tool {tool_name} execution error: {e}")
+
+            await ctx.log_tool_execution(
+                tool_name=tool_name,
+                parameters=args,
+                output=None,
+                success=False,
+                error=str(e),
+            )
+
+            await bus.publish(Events.TOOL_ERROR, {
+                "session_id": ctx.session_id,
+                "message_id": ctx.message_id,
+                "tool_name": tool_name,
+                "call_id": ctx.call_id,
+                "error": str(e),
+            })
+
+            return ToolResult(
+                title=f"Tool error: {tool_name}",
+                output=f"Error executing {tool_name}: {str(e)}",
+                metadata={"error": str(e)},
+            )
