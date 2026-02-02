@@ -1,13 +1,38 @@
 """OpenCode Python - Event bus for async communication"""
 from __future__ import annotations
-from typing import Callable, Dict, List, Any, Optional
+from typing import Callable, Dict, List, Any
 from dataclasses import dataclass, field
 import asyncio
 from collections import defaultdict
 import logging
 
-
 logger = logging.getLogger(__name__)
+
+
+class Events:
+    """Event name constants for agent lifecycle and operations"""
+
+    # Agent lifecycle events
+    AGENT_INITIALIZED = "agent.initialized"
+    AGENT_READY = "agent.ready"
+    AGENT_EXECUTING = "agent.executing"
+    AGENT_ERROR = "agent.error"
+    AGENT_CLEANUP = "agent.cleanup"
+
+    # Session events
+    SESSION_CREATED = "session.created"
+    SESSION_UPDATED = "session.updated"
+    SESSION_DELETED = "session.deleted"
+    SESSION_MESSAGE_CREATED = "session.message_created"
+
+    # Tool events
+    TOOL_EXECUTED = "tool.executed"
+    TOOL_ERROR = "tool.error"
+
+    # Task events
+    TASK_CREATED = "task.created"
+    TASK_COMPLETED = "task.completed"
+    TASK_FAILED = "task.failed"
 
 
 @dataclass
@@ -49,82 +74,42 @@ class EventBus:
         Returns:
             Unsubscribe function
         """
-        subscription = EventSubscription(event_name=event_name, callback=callback, once=once)
+        subscription = EventSubscription(
+            event_name=event_name,
+            callback=callback,
+            once=once,
+        )
         self._subscriptions[event_name].append(subscription)
 
-        async def unsubscribe() -> None:
-            async with self._lock:
-                if subscription in self._subscriptions.get(event_name, []):
-                    self._subscriptions[event_name].remove(subscription)
+        def unsubscribe():
+            self._subscriptions[event_name].remove(subscription)
 
         return unsubscribe
 
-    async def publish(self, event_name: str, data: Optional[Dict[str, Any]] = None) -> None:
-        """Publish an event
+    async def publish(self, event_name: str, data: Dict[str, Any]) -> None:
+        """Publish an event to all subscribers
 
         Args:
-            event_name: Name of event to publish
-            data: Data to send with event
+            event_name: Name of the event
+            data: Event data (key-value pairs)
         """
-        event = Event(name=event_name, data=data or {})
+        event = Event(name=event_name, data=data)
 
-        async with self._lock:
-            subscriptions = self._subscriptions[event_name].copy()
-            to_remove = []
+        subscriptions = list(self._subscriptions.get(event_name, []))
 
-            for subscription in subscriptions:
+        for subscription in subscriptions:
+            try:
+                await subscription.callback(event)
                 if subscription.once:
-                    to_remove.append(subscription)
-                try:
-                    result = subscription.callback(event)
-                    if asyncio.iscoroutine(result):
-                        await result
-                except Exception as e:
-                    logger.error(f"Error in event callback for {event_name}: {e}")
-
-            # Remove once subscriptions
-            for subscription in to_remove:
-                if subscription in self._subscriptions[event_name]:
                     self._subscriptions[event_name].remove(subscription)
+            except Exception as e:
+                logger.error(f"Error in event handler for {event_name}: {e}")
 
-    async def clear_subscriptions(self, event_name: Optional[str] = None) -> None:
-        """Clear all subscriptions or subscriptions for an event"""
+    async def publish_sync(self, event_name: str, data: Dict[str, Any]) -> None:
+        """Synchronous publish helper"""
         async with self._lock:
-            if event_name:
-                self._subscriptions[event_name].clear()
-            else:
-                self._subscriptions.clear()
+            await self.publish(event_name, data)
 
 
 # Global event bus instance
 bus = EventBus()
-
-
-# Event names
-class Events:
-    """Predefined event names"""
-    SESSION_CREATED = "session.created"
-    SESSION_UPDATED = "session.updated"
-    SESSION_DELETED = "session.deleted"
-    MESSAGE_CREATED = "message.created"
-    MESSAGE_DELETED = "message.deleted"
-    MESSAGE_UPDATED = "message.updated"
-    MESSAGE_PART_UPDATED = "message.part.updated"
-    PERMISSION_ASKED = "permission.asked"
-    PERMISSION_GRANTED = "permission.granted"
-    PERMISSION_DENIED = "permission.denied"
-    FILE_WATCHED = "file.watched"
-    GIT_STATUS_CHANGED = "git.status.changed"
-    TOOL_STARTED = "tool.started"
-    TOOL_COMPLETED = "tool.completed"
-    TOOL_ERROR = "tool.error"
-    AGENT_INITIALIZED = "agent.initialized"
-    AGENT_READY = "agent.ready"
-    AGENT_EXECUTING = "agent.executing"
-    AGENT_ERROR = "agent.error"
-    AGENT_CLEANUP = "agent.cleanup"
-    TASK_STARTED = "task.started"
-    TASK_COMPLETED = "task.completed"
-    TASK_FAILED = "task.failed"
-    TASK_CANCELLED = "task.cancelled"
-    SUBTASK_ADDED = "subtask.added"

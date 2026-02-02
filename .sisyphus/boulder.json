@@ -1,13 +1,8 @@
 {
-  "active_plan": "/Users/parkermsligting/develop/agentic_python/.worktrees/python-sdk/.sisyphus/plans/bridge-pattern-sdk.md",
-  "started_at": "2026-01-29T18:18:31.300Z",
+  "active_plan": "/Users/parkermsligting/develop/agentic_python/.worktrees/python-sdk/.sisyphus/plans/agentic-reviewer.md",
+  "started_at": "2026-01-31T18:41:59.687Z",
   "session_ids": [
-    "ses_3f5080724ffefIPUowqy2YnMjc",
-    "ses_3f4b95b4affepTsb4mCTJLNXoL",
-    "ses_3f43b0061ffebovuI2ge0YSW30",
-    "ses_3f3e4a6d9ffeEbsE6HVbiPqvFh",
-    "ses_3f055c15bffewhFNeJ13ET7H99",
-    "ses_3f00c9d58ffepxE1G8ti4y0h5z"
+    "ses_3eab3a653ffe6r7eutAyGYN2LT"
   ],
-  "plan_name": "bridge-pattern-sdk"
+  "plan_name": "agentic-reviewer"
 }
