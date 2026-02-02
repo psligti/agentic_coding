@@ -15,7 +15,7 @@ from opencode_python.core.settings import get_settings, get_storage_dir
 from opencode_python.core.session import SessionManager
 from opencode_python.session.export_import import ExportImportManager
 from opencode_python.storage.store import SessionStorage
-from opencode_python.tui.app import OpenCodeTUI
+from opencode_python.tui import VerticalStackApp
 
 console = Console()
 
@@ -81,7 +81,7 @@ def run(message: tuple[str, ...], agent: str, model: str | None) -> None:
     console.print("[dim]\n--- Session started ---[/dim]")
     console.print("[dim]Use 'opencode tui' to launch TUI mode.[/dim]")
 
-    app = OpenCodeTUI()
+    app = VerticalStackApp()
     app.run()
 
 
@@ -147,7 +147,7 @@ def import_session(import_path: str, project_id: str | None) -> None:
 @click.command()
 def tui() -> None:
     """Launch Textual TUI interface"""
-    app = OpenCodeTUI()
+    app = VerticalStackApp()
     app.run()
 
 

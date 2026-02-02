@@ -2,7 +2,7 @@
 from opencode_python.tui.widgets.header import SessionHeader
 from opencode_python.tui.widgets.footer import SessionFooter
 from opencode_python.tui.widgets.save_indicator import SaveIndicator
-from opencode_python.tui.widgets.top_bar import TopBar, RunState
+from opencode_python.tui.widgets.top_bar import TopBar
 from opencode_python.tui.widgets.status_bar import StatusBar
 from opencode_python.tui.widgets.prompt_area import PromptArea
 from opencode_python.tui.widgets.conversation_history import ConversationHistory
@@ -18,4 +18,5 @@ __all__ = [
     "PromptArea",
     "ConversationHistory",
     "SystemEventBlock",
+    "EventType",
 ]

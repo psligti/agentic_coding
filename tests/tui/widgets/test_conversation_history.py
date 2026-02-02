@@ -355,3 +355,60 @@ async def test_conversation_history_on_mount_renders():
         # on_mount is called automatically during composition
         # Should not raise any errors
         assert history is not None
+
+
+@pytest.mark.asyncio
+async def test_enum_value_handling_in_add_message_block_from_model():
+    """Test that message.type is used directly without .value"""
+    from opencode_python.tui.models import Message, MessageType, MessagePart, MessagePartType, Timestamp
+
+    class TestApp(App):
+        def compose(self):
+            yield ConversationHistory()
+
+    app = TestApp()
+    async with app.run_test() as pilot:
+        history = app.query_one(ConversationHistory)
+
+        # Create a message with enum
+        timestamp = Timestamp(created="2024-01-01T00:00:00")
+        text_part = MessagePart(part_type=MessagePartType.TEXT, text="Test")
+        message = Message(
+            type=MessageType.USER,
+            time=timestamp,
+            parts=[text_part]
+        )
+
+        # Should not raise AttributeError when calling _add_message_block_from_model
+        # This tests that message.type is used directly (string) not message.type.value
+        history.messages = [message]
+        try:
+            history._add_message_block_from_model(message)
+        except AttributeError as e:
+            pytest.fail(f"AttributeError raised when accessing message.type: {e}")
+
+        # Verify message was processed
+        assert len(history.messages) == 1
+
+
+@pytest.mark.asyncio
+async def test_enum_value_handling_in_add_system_event():
+    """Test that event_type.value is used correctly"""
+    class TestApp(App):
+        def compose(self):
+            yield ConversationHistory()
+
+    app = TestApp()
+    async with app.run_test() as pilot:
+        history = app.query_one(ConversationHistory)
+
+        # Should not raise AttributeError when adding system event
+        # This tests that event_type.value works correctly (event_type is EventType enum)
+        try:
+            history.add_system_event(EventType.INFO, "Test event")
+        except AttributeError as e:
+            pytest.fail(f"AttributeError raised when accessing event_type.value: {e}")
+
+        # Verify event was added
+        assert len(history.messages) == 1
+

@@ -2,7 +2,7 @@
 
 Main TUI application with vertical stack layout:
 - TopBar (fixed at top)
-- ConversationHistory (scrollable, 1fr height)
+- ConversationHistory (scrollable, fills available space)
 - PromptArea (auto-expanding input)
 - StatusBar (fixed at bottom)
 """
@@ -14,17 +14,18 @@ from typing import Dict, List, Any, Optional
 
 import asyncio
 import logging
+import uuid
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Vertical, Horizontal
 from textual.message import Message
+
+from textual.containers import Vertical
 
 from opencode_python.tui.widgets.header import SessionHeader
 from opencode_python.tui.widgets.conversation_history import ConversationHistory, EventType
 from opencode_python.tui.widgets.prompt_area import PromptArea
 from opencode_python.tui.widgets.status_bar import StatusBar
-from opencode_python.tui.context_manager import ContextManager, RunState
 from opencode_python.tui.palette.enhanced_command_palette import EnhancedCommandPalette, EnhancedCommandExecute
 from opencode_python.core.event_bus import bus, Events, Event
 
@@ -44,6 +45,8 @@ class VerticalStackApp(App[None]):
 
     CSS_PATH = Path(__file__).parent / "opencode.css"
 
+    CSS = ""
+
     BINDINGS = [
         Binding("ctrl+q", "quit", "Quit"),
         Binding("ctrl+p", "open_command_palette", "Command Palette"),
@@ -57,7 +60,7 @@ class VerticalStackApp(App[None]):
     status_bar: StatusBar
 
     # Context manager
-    context_manager: ContextManager
+    context_manager = None
 
     # Session state
     session_title: str = "OpenCode Session"
@@ -68,20 +71,6 @@ class VerticalStackApp(App[None]):
     message_count: int = 0
     total_cost: float = 0.0
     total_tokens: int = 0
-
-    def __init__(self, **kwargs):
-        """Initialize VerticalStackApp"""
-        super().__init__(**kwargs)
-        self.context_manager = ContextManager()
-        self._initialize_context()
-
-    def _initialize_context(self) -> None:
-        """Initialize default context"""
-        self.context_manager.provider_id = "openai"
-        self.context_manager.account_id = "default"
-        self.context_manager.model_id = self.current_model
-        self.context_manager.agent = self.current_agent
-        self.context_manager.session_id = "session-001"
 
     def compose(self) -> ComposeResult:
         yield SessionHeader(
@@ -174,7 +163,7 @@ class VerticalStackApp(App[None]):
 
         self.conversation_history.add_message("user", prompt_text)
 
-        self.context_manager.run_state = RunState.RUNNING
+        self.context_manager.run_state = "running"
 
         if self.context_manager.session_id != "session-001":
             self.conversation_history.add_system_event(
@@ -199,7 +188,7 @@ class VerticalStackApp(App[None]):
         self.total_tokens += len(prompt_text.split()) + len(response_text.split())
         self._update_metrics_display()
 
-        self.context_manager.run_state = RunState.IDLE
+        self.context_manager.run_state = "idle"
 
     def on_enhanced_command_execute(self, event: EnhancedCommandExecute) -> None:
         self._handle_enhanced_command(event.scope, event.item_id)
@@ -227,7 +216,7 @@ class VerticalStackApp(App[None]):
     def _get_sample_providers(self):
         from opencode_python.providers_mgmt.models import Provider
         from opencode_python.providers.base import ProviderID
-        
+
         return [
             Provider(
                 id=ProviderID.OPENAI,
@@ -236,10 +225,10 @@ class VerticalStackApp(App[None]):
                 base_url="https://api.openai.com/v1"
             ),
         ]
-    
+
     def _get_sample_accounts(self):
         from opencode_python.providers_mgmt.models import Account
-        
+
         return [
             Account(
                 id="default",
@@ -249,10 +238,10 @@ class VerticalStackApp(App[None]):
                 is_active=True
             ),
         ]
-    
+
     def _get_sample_models(self):
         from opencode_python.providers.base import ModelInfo, ProviderID
-        
+
         return [
             ModelInfo(
                 id="gpt-4",
@@ -269,10 +258,10 @@ class VerticalStackApp(App[None]):
                 api_id="gpt-3.5-turbo"
             ),
         ]
-    
+
     def _get_sample_agents(self):
         from opencode_python.agents.profiles import AgentProfile
-        
+
         return [
             AgentProfile(
                 id="assistant",
@@ -289,7 +278,7 @@ class VerticalStackApp(App[None]):
                 tags=["code", "programming"]
             ),
         ]
-    
+
     def _get_sample_sessions(self):
         return [
             {
@@ -310,7 +299,7 @@ class VerticalStackApp(App[None]):
         """Handle EnhancedCommandPalette command execution
 
         Args:
-            scope: The scope of the selected item (providers, accounts, models, agents, sessions)
+            scope: The scope of selected item (providers, accounts, models, agents, sessions)
             item_id: The ID of the selected item
         """
         logger.info(f"Enhanced command executed: scope={scope}, item_id={item_id}")
@@ -333,7 +322,7 @@ class VerticalStackApp(App[None]):
         elif scope == "models":
             self.context_manager.switch_model(item_id)
             self.current_model = item_id
-            self.top_bar.model = item_id
+            self._update_context_display()
             self.conversation_history.add_system_event(
                 EventType.CONTEXT_SWITCH,
                 f"Switched model to: {item_id}"
@@ -342,7 +331,7 @@ class VerticalStackApp(App[None]):
         elif scope == "agents":
             self.context_manager.switch_agent(item_id)
             self.current_agent = item_id
-            self.top_bar.agent = item_id
+            self._update_context_display()
             self.conversation_history.add_system_event(
                 EventType.CONTEXT_SWITCH,
                 f"Switched agent to: {item_id}"
@@ -355,6 +344,12 @@ class VerticalStackApp(App[None]):
                 EventType.CONTEXT_SWITCH,
                 f"Switched session: {old_session} -> {item_id}"
             )
+
+    def _update_context_display(self) -> None:
+        """Update TopBar and StatusBar when context changes"""
+        if self.top_bar:
+            self.top_bar.model = self.context_manager.model_id
+            self.top_bar.agent = self.context_manager.agent
 
     def action_undo_context(self) -> None:
         """Undo last context switch (Ctrl+Z)"""
@@ -370,11 +365,9 @@ class VerticalStackApp(App[None]):
             elif context_type == "model":
                 self.context_manager.model_id = old_value
                 self.current_model = old_value
-                self.top_bar.model = old_value
             elif context_type == "agent":
                 self.context_manager.agent = old_value
                 self.current_agent = old_value
-                self.top_bar.agent = old_value
             elif context_type == "session":
                 self.context_manager.session_id = old_value
 
@@ -388,24 +381,7 @@ class VerticalStackApp(App[None]):
                 "Nothing to undo"
             )
 
-    def _update_context_display(self) -> None:
-        """Update TopBar and StatusBar when context changes"""
-        if self.top_bar:
-            self.top_bar.model = self.context_manager.model_id
-            self.top_bar.agent = self.context_manager.agent
-
     async def action_quit(self) -> None:
         """Quit application"""
         self.app.exit()
         logger.info("Vertical Stack TUI exited")
-
-
-# Factory function for creating the app
-def create_vertical_stack_app() -> VerticalStackApp:
-    """Factory function to create and configure the VerticalStackApp
-
-    Returns:
-        Configured VerticalStackApp instance
-    """
-    app = VerticalStackApp()
-    return app

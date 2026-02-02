@@ -7,7 +7,6 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Static
 
-
 class SessionHeader(Static):
     """Header widget displaying session information with breadcrumbs and model display
 
@@ -26,32 +25,6 @@ class SessionHeader(Static):
     model: reactive[Optional[str]] = reactive(None)
     agent: reactive[Optional[str]] = reactive(None)
 
-    DEFAULT_CSS = """
-    SessionHeader {
-        dock: top;
-        height: auto;
-        padding: 1 2;
-        background: $secondary;
-        text-align: left;
-    }
-
-    SessionHeader .title {
-        text-style: bold;
-    }
-
-    SessionHeader .breadcrumb {
-        color: $text-muted;
-    }
-
-    SessionHeader .model {
-        color: $accent;
-    }
-
-    SessionHeader .agent {
-        color: $success;
-    }
-    """
-
     def __init__(
         self,
         session_title: str = "",
@@ -63,7 +36,7 @@ class SessionHeader(Static):
         """Initialize SessionHeader
 
         Args:
-            session_title: Title of the current session
+            session_title: Title of current session
             parent_session_id: ID of parent session (if this is a subagent session)
             model: Model name being used
             agent: Agent name being used
@@ -74,15 +47,9 @@ class SessionHeader(Static):
         self._parent_session_id = parent_session_id
         self._model = model
         self._agent = agent
-        # Initialize reactive properties
-        self.session_title = session_title
-        self.parent_session_id = parent_session_id
-        self.model = model
-        self.agent = agent
-        self._update_content()
 
     def _update_content(self) -> None:
-        """Update the header content based on current properties"""
+        """Update header content based on current properties"""
         content_parts = []
 
         # Add session title
@@ -108,24 +75,20 @@ class SessionHeader(Static):
 
     def watch_session_title(self, old_value: str, new_value: str) -> None:
         """Called when session_title changes"""
-        self._session_title = new_value
         self._update_content()
 
     def watch_parent_session_id(
         self, old_value: Optional[str], new_value: Optional[str]
     ) -> None:
         """Called when parent_session_id changes"""
-        self._parent_session_id = new_value
         self._update_content()
 
     def watch_model(self, old_value: Optional[str], new_value: Optional[str]) -> None:
         """Called when model changes"""
-        self._model = new_value
         self._update_content()
 
     def watch_agent(self, old_value: Optional[str], new_value: Optional[str]) -> None:
         """Called when agent changes"""
-        self._agent = new_value
         self._update_content()
 
     # Property accessors for backward compatibility

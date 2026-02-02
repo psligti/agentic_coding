@@ -26,11 +26,13 @@ class PromptArea(TextArea):
         padding: 0 1;
         background: #1e1e1e;
         min-height: 3;
+        color: #f5f5f5;
     }
 
     PromptArea:focus {
-        border: solid #9d7cd8;
+        border: solid #56b6c2;
         padding: 0 1;
+        background: #141414;
     }
     """
 
@@ -65,7 +67,7 @@ class PromptArea(TextArea):
         Args:
             event: Key event from Textual
         """
-        if event.key == "enter" and not event.shift_key:
+        if event.key == "enter":
             # Get current text
             text = self.text.strip()
 

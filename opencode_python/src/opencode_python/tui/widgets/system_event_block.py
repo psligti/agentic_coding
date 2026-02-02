@@ -23,21 +23,21 @@ class SystemEventBlock(Widget):
     SystemEventBlock {
         padding: 1;
         margin: 0 1;
-        border-bottom: solid $primary 20%;
+        border-bottom: solid #56b6c2 20%;
     }
-    
+
     SystemEventBlock .event-content {
         display: flex;
         align-items: center;
     }
-    
+
     SystemEventBlock .event-icon {
         margin-right: 1;
-        color: $warning;
+        color: #f5a742;
     }
-    
+
     SystemEventBlock .event-text {
-        color: $text-muted;
+        color: #c678dd;
     }
     """
     

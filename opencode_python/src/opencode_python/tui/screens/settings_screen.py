@@ -38,7 +38,7 @@ class SettingsScreen(ModalScreen[str]):
 
     Header {
         background: $panel;
-        border-bottom: thin $panel;
+        border-bottom: solid $panel;
     }
 
     #settings_content {

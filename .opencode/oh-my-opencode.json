@@ -74,5 +74,9 @@
     "providerConcurrency": {
       "zai-coding-plan": 30
     }
+  },
+  "git_master": {
+    "commit_footer": true,
+    "include_co_authored_by": true
   }
 }

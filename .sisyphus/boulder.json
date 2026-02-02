@@ -1,8 +1,9 @@
 {
-  "active_plan": "/Users/parkermsligting/develop/agentic_python/.worktrees/tui/.sisyphus/plans/vertical-stack-tui.md",
-  "started_at": "2026-01-31T17:58:25Z",
+  "active_plan": null,
+  "started_at": null,
   "session_ids": [
-    "ses_3ed6c521affee26xm76WdE5DU1"
+    "ses_3ed6c521affee26xm76WdE5DU1",
+    "ses_3eaca4e40ffeEsR0PGpqScLAYO"
   ],
   "plan_name": "vertical-stack-tui"
 }

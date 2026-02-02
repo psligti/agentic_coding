@@ -1,4 +1,4 @@
 """OpenCode Python - TUI module exports"""
-from .app import OpenCodeTUI
+from .vertical_stack_app import VerticalStackApp
 
-__all__ = ["OpenCodeTUI"]
+__all__ = ["VerticalStackApp"]

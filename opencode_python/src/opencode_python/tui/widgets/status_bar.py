@@ -15,27 +15,13 @@ class StatusBar(Widget):
 
     CSS = """
     StatusBar {
-        dock: bottom;
-        height: auto;
-        padding: 1 2;
-        background: $secondary;
-        border-top: solid $primary 40%;
-    }
-
-    StatusBar .hints {
-        height: auto;
-        text-align: left;
-        color: $text-muted;
-    }
-
-    StatusBar .metrics {
-        height: auto;
-        text-align: right;
-        color: $text-muted;
-    }
-
-    StatusBar .metric-value {
-        color: $accent;
+        height: 1;
+        padding: 0 1;
+        background: #141414;
+        border-top: solid #56b6c2 40%;
+        color: #f5f5f5;
+        text-style: none;
+        margin: 0;
     }
     """
 
@@ -45,46 +31,20 @@ class StatusBar(Widget):
     tokens: reactive[int] = reactive(0)
 
     def compose(self) -> ComposeResult:
-        """Compose the status bar with hints and metrics containers"""
-        yield Horizontal(id="hints")
-        yield Horizontal(id="metrics")
+        """Compose status bar with single line of content"""
+        yield Static(id="status-content", classes="status-content")
 
     def on_mount(self) -> None:
         """Called when widget is mounted"""
         self._update_display()
-    
+
     def _update_display(self) -> None:
         """Update widget content based on reactive properties"""
-        # Left side: keyboard hints
-        hints = [
-            Static("Ctrl+P", classes="hint"),
-            Static(" Ctrl+Q", classes="hint"),
-            Static(" Ctrl+Z", classes="hint"),
-            Static(" | ", classes="separator"),
-            Static("Enter", classes="hint"),
-            Static(" Esc", classes="hint"),
-        ]
-        
-        # Right side: metrics
-        metrics = []
-        metrics.append(Static(f"Messages: ", classes="metric-label"))
-        metrics.append(Static(f"[bold]{self.message_count}[/bold]", classes="metric-value"))
-        metrics.append(Static(" | ", classes="separator"))
-        metrics.append(Static(f"Cost: $", classes="metric-label"))
-        metrics.append(Static(f"[bold]{self.cost:.4f}[/bold]", classes="metric-value"))
-        metrics.append(Static(" | ", classes="separator"))
-        metrics.append(Static(f"Tokens: ", classes="metric-label"))
-        metrics.append(Static(f"[bold]{self.tokens}[/bold]", classes="metric-value"))
-        
-        with self.query_one("#hints", Horizontal):
-            self.query_one("#hints").remove_children()
-            for hint in hints:
-                self.query_one("#hints").mount(hint)
-        
-        with self.query_one("#metrics", Horizontal):
-            self.query_one("#metrics").remove_children()
-            for metric in metrics:
-                self.query_one("#metrics").mount(metric)
+        hints = "Ctrl+P | Ctrl+Q | Ctrl+Z | Enter | Esc"
+        metrics = f"Messages: {self.message_count} | Cost: ${self.cost:.4f} | Tokens: {self.tokens}"
+        content = f"{hints}    {metrics}"
+
+        self.query_one("#status-content").update(content)
     
     # Reactive watchers
     def watch_message_count(self, old_value: int, new_value: int) -> None:
