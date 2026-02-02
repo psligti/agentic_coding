@@ -5,7 +5,7 @@ and NotificationHandler protocols that integrate with Textual framework.
 """
 
 import pytest
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, MagicMock, patch, AsyncMock
 from textual.app import App
 
 from opencode_python.interfaces.io import (
@@ -49,12 +49,16 @@ class TestTUIIOHandler:
     @pytest.mark.asyncio
     async def test_tui_io_handler_prompt_returns_input(self, io_handler: TUIIOHandler) -> None:
         """Test that prompt returns user input."""
+        mock_screen = AsyncMock(return_value="user_input")
+        io_handler.app.push_screen = mock_screen
         result = await io_handler.prompt("Enter value", default="test")
-        assert result == "test"
+        assert result == "user_input"
 
     @pytest.mark.asyncio
     async def test_tui_io_handler_prompt_returns_empty_without_default(self, io_handler: TUIIOHandler) -> None:
         """Test that prompt returns empty string without default."""
+        mock_screen = AsyncMock(return_value="")
+        io_handler.app.push_screen = mock_screen
         result = await io_handler.prompt("Enter value")
         assert result == ""
 

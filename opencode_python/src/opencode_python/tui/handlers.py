@@ -6,8 +6,10 @@ specifically designed for TUI applications using Textual framework.
 
 from __future__ import annotations
 
-from textual.app import App
-from textual.widgets import Input, DataTable
+from textual.app import App, ComposeResult
+from textual.widgets import Input, DataTable, Static, Button
+from textual.screen import ModalScreen
+from textual.containers import Container
 
 from opencode_python.interfaces.io import (
     IOHandler,
@@ -34,19 +36,35 @@ class TUIIOHandler(IOHandler):
         self.app = app
 
     async def prompt(self, message: str, default: str | None = None) -> str:
-        """Prompt user for text input.
+        """Prompt user for text input via modal dialog."""
+        result = await self.app.push_screen(self.PromptModal(message, default))
+        return result or default or ""
 
-        In TUI context, this should use an Input widget or similar.
-        For simplicity, returns default or empty string.
+    class PromptModal(ModalScreen[str]):
+        """Modal dialog for user input."""
 
-        Args:
-            message: The prompt message to display.
-            default: Optional default value.
+        BINDINGS = [("escape", "dismiss", "Close")]
 
-        Returns:
-            User input or default.
-        """
-        return default or ""
+        def __init__(self, message: str, default: str | None = None) -> None:
+            super().__init__()
+            self._message = message
+            self._default = default
+
+        def compose(self) -> ComposeResult:
+            with Container(classes="panel prompt-modal"):
+                yield Static(self._message, classes="legend-header title")
+                yield Input(value=self._default, placeholder="Enter text...", id="prompt_input", classes="control")
+
+        def on_mount(self) -> None:
+            self.query_one("#prompt_input", Input).focus()
+
+        def on_input_submitted(self, event: Input.Submitted) -> None:
+            self.dismiss(event.value)
+
+        def on_button_pressed(self, event: Button.Pressed) -> None:
+            input_widget = self.query_one("#prompt_input", Input)
+            if input_widget.value:
+                self.dismiss(input_widget.value)
 
     async def confirm(self, message: str, default: bool = False) -> bool:
         """Ask user for yes/no confirmation.
