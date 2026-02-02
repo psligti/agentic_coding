@@ -1,6 +1,6 @@
 """Pydantic contracts for review agent output."""
 from __future__ import annotations
-from typing import List, Literal
+from typing import List, Literal, Callable, Any
 import pydantic as pd
 
 
@@ -63,5 +63,37 @@ class ReviewOutput(pd.BaseModel):
     skips: List[Skip] = pd.Field(default_factory=list)
     findings: List[Finding] = pd.Field(default_factory=list)
     merge_gate: MergeGate
+
+    model_config = pd.ConfigDict(extra="forbid")
+
+
+class ReviewInputs(pd.BaseModel):
+    repo_root: str
+    base_ref: str
+    head_ref: str
+    pr_title: str = ""
+    pr_description: str = ""
+    ticket_description: str = ""
+    include_optional: bool = False
+    timeout_seconds: int = 60
+
+    model_config = pd.ConfigDict(extra="forbid")
+
+
+class ToolPlan(pd.BaseModel):
+    proposed_commands: List[str] = pd.Field(default_factory=list)
+    auto_fix_available: bool = False
+    execution_summary: str = ""
+
+    model_config = pd.ConfigDict(extra="forbid")
+
+
+class OrchestratorOutput(pd.BaseModel):
+    merge_decision: MergeGate
+    findings: List[Finding] = pd.Field(default_factory=list)
+    tool_plan: ToolPlan
+    subagent_results: List[ReviewOutput] = pd.Field(default_factory=list)
+    summary: str = ""
+    total_findings: int = 0
 
     model_config = pd.ConfigDict(extra="forbid")
