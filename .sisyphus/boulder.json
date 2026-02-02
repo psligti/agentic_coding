@@ -1,6 +1,12 @@
 {
-  "active_plan": "/Users/parkersligting/develop/pt/agentic_coding/.worktrees/tui/.sisyphus/plans/tui-implementation.md",
-  "started_at": "2026-02-02T16:35:34.246Z",
-  "session_ids": ["ses_3e0ca5f30ffeQhmppyyQyCO2Cm"],
-  "plan_name": "tui-implementation"
+  "active_plan": "/Users/parkersligting/develop/pt/agentic_coding/.worktrees/webapp/.sisyphus/plans/react-web-app.md",
+  "started_at": "2026-02-02T17:52:34.167Z",
+  "session_ids": [
+    "ses_3e0a6f5f6ffeS2cTodD8muh55e",
+    "ses_3e0758b1affeFE5mVucjrwjG3x",
+    "ses_3e0758b16ffefxF1z16NQR6QhU",
+    "ses_3e07575fcffe719ry0scgbu7sK",
+    "ses_3e07575fbffeo9bc3xQe0Ov94t"
+  ],
+  "plan_name": "react-web-app"
 }
