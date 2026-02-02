@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+
+# Add opencode_python to Python path for SDK imports (absolute path for reliable imports)
+sys.path.insert(0, "/Users/parkersligting/develop/pt/agentic_coding/.worktrees/webapp/opencode_python/src")
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -45,11 +51,13 @@ async def health_check() -> dict[str, str | bool]:
 
 
 # Include API routes
-from api import health, messages, sessions
+from api import agents, health, messages, sessions, streaming
 
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(messages.router)
 app.include_router(sessions.router)
+app.include_router(agents.router)
+app.include_router(streaming.router)
 
 
 @app.get("/api/v1/info", tags=["api"])
