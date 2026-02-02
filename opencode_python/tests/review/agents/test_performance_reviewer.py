@@ -1,164 +1,346 @@
-"""Tests for PerformanceReliabilityReviewer."""
+"""Tests for PerformanceReliabilityReviewer - LLM-based analysis."""
 import pytest
-
-from opencode_python.agents.review.contracts import Finding
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from opencode_python.agents.review.agents.performance import PerformanceReliabilityReviewer
 from opencode_python.agents.review.base import ReviewContext
+from opencode_python.agents.review.contracts import ReviewOutput, Finding, Scope, MergeGate
+from opencode_python.core.models import Session
 
 
-@pytest.mark.asyncio
-async def test_performance_reviewer_detects_retry_and_io_issues(monkeypatch):
-    reviewer = PerformanceReliabilityReviewer()
-    monkeypatch.setattr(
-        PerformanceReliabilityReviewer,
-        "_check_concurrency_issues",
-        lambda self, diff: [],
-    )
-    diff = """diff --git a/src/app.py b/src/app.py
-+++ b/src/app.py
-@@ -1,1 +1,6 @@
-+ while True:
-+     try:
-+         pass
-+     except Exception:
-+         pass
-+ for item in items: db.execute("select 1")
-"""
-    context = ReviewContext(
-        changed_files=["src/app.py"],
-        diff=diff,
-        repo_root="/repo",
-    )
+class TestPerformanceReliabilityReviewerLLMBased:
+    """Test PerformanceReliabilityReviewer with LLM-based analysis."""
 
-    output = await reviewer.review(context)
+    @pytest.fixture
+    def reviewer(self):
+        """Create a PerformanceReliabilityReviewer instance."""
+        return PerformanceReliabilityReviewer()
 
-    assert output.severity == "blocking"
-    assert output.merge_gate.decision == "block"
-    finding_ids = {finding.id for finding in output.findings}
-    assert "PERF-RETRY-001" in finding_ids
-    assert "PERF-IO-001" in finding_ids
+    @pytest.fixture
+    def sample_context(self):
+        """Create a sample review context."""
+        return ReviewContext(
+            changed_files=["src/app.py", "src/api/service.py"],
+            diff="+ while True:\n+     pass\n+ for item in items: db.execute('select 1')",
+            repo_root="/test/repo",
+            base_ref="main",
+            head_ref="feature/performance-opt"
+        )
 
+    @pytest.fixture
+    def mock_session(self):
+        """Create a mock Session object."""
+        return Session(
+            id="test-session-id",
+            slug="test-session",
+            project_id="test-project",
+            directory="/test/repo",
+            title="Test Session",
+            version="1.0"
+        )
 
-@pytest.mark.asyncio
-async def test_performance_reviewer_skips_when_no_relevant_files():
-    reviewer = PerformanceReliabilityReviewer()
-    context = ReviewContext(
-        changed_files=["README.md"],
-        diff="+ docs",
-        repo_root="/repo",
-    )
+    @pytest.fixture
+    def sample_review_output_json(self):
+        """Sample valid LLM response JSON for performance issues."""
+        return """{
+            "agent": "performance",
+            "summary": "Performance review complete. Found retry logic issue and IO amplification",
+            "severity": "critical",
+            "scope": {
+                "relevant_files": ["src/app.py", "src/api/service.py"],
+                "ignored_files": [],
+                "reasoning": "Performance review for API changes"
+            },
+            "findings": [
+                {
+                    "id": "PERF-RETRY-001",
+                    "title": "Bare except catches all exceptions",
+                    "severity": "critical",
+                    "confidence": "high",
+                    "owner": "dev",
+                    "estimate": "M",
+                    "evidence": "File: src/app.py | Lines: 2-4 | Bare except catches all exceptions including expected ones",
+                    "risk": "Silent failures hide bugs and make debugging impossible",
+                    "recommendation": "Catch only specific expected exceptions, not broad Exception"
+                },
+                {
+                    "id": "PERF-IO-001",
+                    "title": "Database query in loop",
+                    "severity": "critical",
+                    "confidence": "high",
+                    "owner": "dev",
+                    "estimate": "L",
+                    "evidence": "File: src/api/service.py | Loop: 7 | Executes database query for each item without batching",
+                    "risk": "N+1 queries cause excessive database load and slow response times",
+                    "recommendation": "Batch queries or use cursor-based iteration"
+                }
+            ],
+            "merge_gate": {
+                "decision": "needs_changes",
+                "must_fix": ["PERF-RETRY-001", "PERF-IO-001"],
+                "should_fix": [],
+                "notes_for_coding_agent": [
+                    "Found 2 critical performance issues that must be fixed:",
+                    "  1. Bare except catches all exceptions",
+                    "  2. Database query in loop causes IO amplification",
+                    "Consider using specific exception types and batching database queries"
+                ]
+            }
+        }"""
 
-    output = await reviewer.review(context)
+    @pytest.fixture
+    def sample_no_findings_json(self):
+        """Sample LLM response with no findings."""
+        return """{
+            "agent": "performance",
+            "summary": "No relevant performance changes",
+            "severity": "merge",
+            "scope": {
+                "relevant_files": [],
+                "ignored_files": ["README.md"],
+                "reasoning": "No performance-related files changed"
+            },
+            "findings": [],
+            "merge_gate": {
+                "decision": "approve",
+                "must_fix": [],
+                "should_fix": [],
+                "notes_for_coding_agent": []
+            }
+        }"""
 
-    assert output.severity == "merge"
-    assert output.merge_gate.decision == "approve"
+    @pytest.mark.asyncio
+    async def test_review_creates_ai_session_and_calls_process_message(
+        self,
+        reviewer,
+        sample_context,
+        mock_session,
+        sample_review_output_json
+    ):
+        """Test that review() creates AISession and calls process_message()."""
+        mock_ai_session = MagicMock()
+        mock_message = MagicMock()
+        mock_message.text = sample_review_output_json
 
+        mock_ai_session.process_message = AsyncMock(return_value=mock_message)
 
-def test_get_system_prompt_returns_performance_prompt():
-    reviewer = PerformanceReliabilityReviewer()
-    system_prompt = reviewer.get_system_prompt()
-    
-    assert system_prompt == "You are the Performance & Reliability Review Subagent.\n\nUse this shared behavior:\n- If changed_files or diff are missing, request them.\n- Focus on hot paths, IO amplification, retries, timeouts, concurrency hazards.\n- Propose minimal checks first; escalate if core systems changed.\n\nSpecialize in:\n- complexity regressions (O(n^2), unbounded loops)\n- IO amplification (extra queries/reads)\n- retry/backoff/timeouts correctness\n- concurrency hazards (async misuse, shared mutable state)\n- memory/cpu hot paths, caching correctness\n- failure modes and graceful degradation\n\nRelevant changes:\n- loops, batching, pagination, retries\n- network clients, DB access, file IO\n- orchestration changes, parallelism, caching\n\nChecks you may request:\n- targeted benchmarks (if repo has them)\n- profiling hooks or smoke run command\n- unit tests for retry/timeout behavior\n\nBlocking:\n- infinite/unbounded retry risk\n- missing timeouts on network calls in critical paths\n- concurrency bugs with shared mutable state\n\nReturn JSON with agent=\"performance_reliability\" using the standard schema.\nReturn JSON only."
+        with patch('opencode_python.agents.review.agents.performance.AISession') as mock_ai_session_cls:
+            mock_ai_session_cls.return_value = mock_ai_session
 
+            with patch('opencode_python.agents.review.agents.performance.Session') as mock_session_cls:
+                mock_session_cls.return_value = mock_session
 
-def _make_finding(finding_id: str, severity: str) -> Finding:
-    return Finding(
-        id=finding_id,
-        title="Issue",
-        severity=severity,
-        confidence="high",
-        owner="dev",
-        estimate="S",
-        evidence="e",
-        risk="r",
-        recommendation="fix",
-    )
+                result = await reviewer.review(sample_context)
 
+                mock_session_cls.assert_called_once()
+                mock_ai_session.process_message.assert_called_once()
 
-def test_performance_io_checks_and_summary():
-    reviewer = PerformanceReliabilityReviewer()
-    diff = "\n".join([
-        "+ for item in items: db.execute('select 1')",
-        "+ for item in items: requests.get('https://example.com')",
-    ])
+                assert isinstance(result, ReviewOutput)
+                assert result.agent == "performance"
+                assert result.severity == "critical"
+                assert len(result.findings) == 2
 
-    io_findings = reviewer._check_io_amplification(diff)
-    finding_ids = {finding.id for finding in io_findings}
-    assert "PERF-IO-001" in finding_ids
-    assert "PERF-IO-002" in finding_ids
+    @pytest.mark.asyncio
+    async def test_review_handles_missing_api_key_by_raising_exception(
+        self,
+        reviewer,
+        sample_context,
+        mock_session
+    ):
+        """Test that review() raises exception when API key is missing."""
+        mock_ai_session = MagicMock()
 
-    summary = reviewer._generate_summary([
-        _make_finding("a", "blocking"),
-        _make_finding("b", "critical"),
-        _make_finding("c", "warning"),
-    ])
-    assert "blocking" in summary
-    assert "critical" in summary
-    assert "warning" in summary
+        with patch('opencode_python.agents.review.agents.performance.settings') as mock_settings:
+            from opencode_python.core import settings
+            mock_settings.api_key = None
 
+            with patch('opencode_python.agents.review.agents.performance.AISession') as mock_ai_session_cls:
+                mock_ai_session_cls.return_value = mock_ai_session
 
-def test_performance_concurrency_checks_with_monkeypatched_regex(monkeypatch):
-    reviewer = PerformanceReliabilityReviewer()
+                with pytest.raises(ValueError) as exc_info:
+                    await reviewer.review(sample_context)
+                assert "API key" in str(exc_info.value)
 
-    class DummyMatch:
-        def __init__(self, start: int) -> None:
-            self._start = start
+    @pytest.mark.asyncio
+    async def test_review_handles_invalid_json_response(
+        self,
+        reviewer,
+        sample_context,
+        mock_session
+    ):
+        """Test that review() returns error ReviewOutput on invalid JSON."""
+        mock_ai_session = MagicMock()
+        mock_message = MagicMock()
+        mock_message.text = "not valid json"
 
-        def start(self) -> int:
-            return self._start
+        mock_ai_session.process_message = AsyncMock(return_value=mock_message)
 
-    class DummyPattern:
-        def __init__(self, matches: list[DummyMatch]) -> None:
-            self._matches = matches
+        with patch('opencode_python.agents.review.agents.performance.AISession') as mock_ai_session_cls:
+            mock_ai_session_cls.return_value = mock_ai_session
 
-        def finditer(self, text: str):
-            return iter(self._matches)
+            with patch('opencode_python.agents.review.agents.performance.Session') as mock_session_cls:
+                mock_session_cls.return_value = mock_session
 
-    import re as std_re
+                result = await reviewer.review(sample_context)
 
-    def fake_compile(pattern: str, flags: int = 0):
-        if pattern.startswith(r"^\+\s*global"):
-            return DummyPattern([DummyMatch(0)])
-        if pattern.startswith(r"^\+\s*(?:asyncio\.create_task"):
-            return DummyPattern([DummyMatch(0)])
-        return std_re.compile(pattern, flags)
+                assert isinstance(result, ReviewOutput)
+                assert result.severity == "critical"
+                assert "Error parsing LLM response" in result.summary
+                assert len(result.findings) == 0
+                assert result.merge_gate.decision == "needs_changes"
 
-    monkeypatch.setattr(
-        "opencode_python.agents.review.agents.performance.re.compile",
-        fake_compile,
-    )
+    @pytest.mark.asyncio
+    async def test_review_handles_timeout_error_by_raising_exception(
+        self,
+        reviewer,
+        sample_context,
+        mock_session
+    ):
+        """Test that review() raises TimeoutError on timeout."""
+        mock_ai_session = MagicMock()
 
-    diff = "\n".join([
-        "+ global counter",
-        "+ counter += 1",
-    ])
-    findings = reviewer._check_concurrency_issues(diff)
-    finding_ids = {finding.id for finding in findings}
-    assert "PERF-CONC-001" in finding_ids
-    assert "PERF-CONC-002" in finding_ids
+        async def mock_process_message(user_message, options=None):
+            import asyncio
+            raise TimeoutError("LLM request timed out")
 
+        mock_ai_session.process_message = mock_process_message
 
-def test_performance_merge_gate_branches():
-    reviewer = PerformanceReliabilityReviewer()
-    merge_gate = reviewer._compute_merge_gate("blocking", [_make_finding("x", "blocking")])
-    assert merge_gate.decision == "block"
+        with patch('opencode_python.agents.review.agents.performance.AISession') as mock_ai_session_cls:
+            mock_ai_session_cls.return_value = mock_ai_session
 
-    merge_gate = reviewer._compute_merge_gate("critical", [_make_finding("y", "critical")])
-    assert merge_gate.decision == "needs_changes"
+            with patch('opencode_python.agents.review.agents.performance.Session') as mock_session_cls:
+                mock_session_cls.return_value = mock_session
 
-    merge_gate = reviewer._compute_merge_gate("warning", [_make_finding("z", "warning")])
-    assert merge_gate.decision == "needs_changes"
+                with pytest.raises(TimeoutError):
+                    await reviewer.review(sample_context)
 
+    @pytest.mark.asyncio
+    async def test_review_with_no_findings_returns_merge_severity(
+        self,
+        reviewer,
+        sample_context,
+        mock_session,
+        sample_no_findings_json
+    ):
+        """Test that review() returns merge severity when no findings."""
+        mock_ai_session = MagicMock()
+        mock_message = MagicMock()
+        mock_message.text = sample_no_findings_json
 
-def test_performance_complexity_and_severity_for_empty_findings():
-    reviewer = PerformanceReliabilityReviewer()
-    diff = "+             value = 1"
-    findings = reviewer._check_complexity(diff)
-    assert any(f.id == "PERF-COMPLEX-002" for f in findings)
+        mock_ai_session.process_message = AsyncMock(return_value=mock_message)
 
-    assert reviewer._compute_severity([]) == "merge"
-    assert reviewer._compute_severity([_make_finding("w", "warning")]) == "warning"
-    merge_gate = reviewer._compute_merge_gate("merge", [])
-    assert merge_gate.decision == "approve"
-    assert "No performance" in reviewer._generate_summary([])
+        with patch('opencode_python.agents.review.agents.performance.AISession') as mock_ai_session_cls:
+            mock_ai_session_cls.return_value = mock_ai_session
+
+            with patch('opencode_python.agents.review.agents.performance.Session') as mock_session_cls:
+                mock_session_cls.return_value = mock_session
+
+                result = await reviewer.review(sample_context)
+
+                assert isinstance(result, ReviewOutput)
+                assert result.agent == "performance"
+                assert result.severity == "merge"
+                assert len(result.findings) == 0
+                assert result.merge_gate.decision == "approve"
+                assert "No relevant performance changes" in result.summary
+
+    @pytest.mark.asyncio
+    async def test_review_includes_system_prompt_and_context_in_message(
+        self,
+        reviewer,
+        sample_context,
+        mock_session,
+        sample_review_output_json
+    ):
+        """Test that review() includes system prompt and context in message."""
+        mock_ai_session = MagicMock()
+        mock_message = MagicMock()
+        mock_message.text = sample_review_output_json
+
+        mock_ai_session.process_message = AsyncMock(return_value=mock_message)
+
+        with patch('opencode_python.agents.review.agents.performance.AISession') as mock_ai_session_cls:
+            mock_ai_session_cls.return_value = mock_ai_session
+
+            with patch('opencode_python.agents.review.agents.performance.Session') as mock_session_cls:
+                mock_session_cls.return_value = mock_session
+
+                result = await reviewer.review(sample_context)
+
+                call_args = mock_ai_session.process_message.call_args
+                args, kwargs = call_args
+                user_message = args[0]
+
+                assert "Performance & Reliability Review Subagent" in user_message
+                assert "src/app.py" in user_message
+                assert "src/api/service.py" in user_message
+                assert reviewer.get_system_prompt() in user_message
+
+    @pytest.mark.asyncio
+    async def test_review_with_blocking_severity_for_critical_issues(
+        self,
+        reviewer,
+        sample_context,
+        mock_session
+    ):
+        """Test that critical findings return blocking severity."""
+        blocking_json = """{
+            "agent": "performance",
+            "summary": "Critical performance issues found",
+            "severity": "blocking",
+            "scope": {
+                "relevant_files": ["src/app.py"],
+                "ignored_files": [],
+                "reasoning": "Performance review"
+            },
+            "findings": [
+                {
+                    "id": "PERF-RETRY-001",
+                    "title": "Infinite loop detected",
+                    "severity": "critical",
+                    "confidence": "high",
+                    "owner": "dev",
+                    "estimate": "M",
+                    "evidence": "File: src/app.py | Line: 3 | while True: without break condition",
+                    "risk": "Infinite loop causes CPU hang and denial of service",
+                    "recommendation": "Add break condition or use explicit iteration limits"
+                }
+            ],
+            "merge_gate": {
+                "decision": "block",
+                "must_fix": ["PERF-RETRY-001"],
+                "should_fix": [],
+                "notes_for_coding_agent": []
+            }
+        }"""
+
+        mock_ai_session = MagicMock()
+        mock_message = MagicMock()
+        mock_message.text = blocking_json
+
+        mock_ai_session.process_message = AsyncMock(return_value=mock_message)
+
+        with patch('opencode_python.agents.review.agents.performance.AISession') as mock_ai_session_cls:
+            mock_ai_session_cls.return_value = mock_ai_session
+
+            with patch('opencode_python.agents.review.agents.performance.Session') as mock_session_cls:
+                mock_session_cls.return_value = mock_session
+
+                result = await reviewer.review(sample_context)
+
+                assert result.severity == "blocking"
+                assert result.merge_gate.decision == "block"
+
+    def test_get_system_prompt_returns_performance_prompt(self, reviewer):
+        """Test that get_system_prompt returns correct performance prompt."""
+        system_prompt = reviewer.get_system_prompt()
+        assert "Performance & Reliability Review Subagent" in system_prompt
+        assert "complexity regressions" in system_prompt
+        assert "IO amplification" in system_prompt
+        assert "retry/backoff/timeouts correctness" in system_prompt
+
+    def test_performance_reviewer_metadata_helpers(self, reviewer):
+        """Test that PerformanceReliabilityReviewer metadata helpers work correctly."""
+        assert reviewer.get_agent_name() == "performance"
+        assert "Performance & Reliability Review Subagent" in reviewer.get_system_prompt()
+        assert reviewer.get_relevant_file_patterns() == ["**/*.py", "**/*.rs", "**/*.go", "**/*.js", "**/*.ts", "**/*.tsx", "**/config/**", "**/database/**", "**/db/**", "**/network/**", "**/api/**", "**/services/**"]
