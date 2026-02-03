@@ -1,6 +1,25 @@
-import { useAddMessage } from '../store'
+import { useCallback } from 'react'
+import { useAddMessage, useSetMessages } from '../store'
 import { fetchApi } from './useApiClient'
-import type { Message, MessageRole } from '../types/api'
+import type { MessageRole } from '../types/api'
+import type { Message } from '../store'
+
+interface MessageResponse {
+  id: string
+  session_id: string
+  role: MessageRole
+  text: string
+  parts: any[]
+  time?: Record<string, unknown>
+}
+
+const toTimestamp = (time?: Record<string, unknown>) => {
+  const created = time?.created
+  if (typeof created === 'number') {
+    return created * 1000
+  }
+  return Date.now()
+}
 
 /**
  * Hook to manage messages with API integration
@@ -8,34 +27,51 @@ import type { Message, MessageRole } from '../types/api'
  */
 export function useMessages() {
   const addMessage = useAddMessage()
+  const setMessages = useSetMessages()
 
   /**
    * Fetch messages for a session from the API
    */
-  const fetchMessages = async (sessionId: string): Promise<void> => {
+  const fetchMessages = useCallback(async (sessionId: string): Promise<void> => {
     try {
-      const messages = await fetchApi<Message[]>(`/sessions/${sessionId}/messages`)
-      messages.forEach((msg) => addMessage(sessionId, msg))
+      const messages = await fetchApi<MessageResponse[]>(`/sessions/${sessionId}/messages`)
+      const normalized = messages.map((msg) => ({
+        id: msg.id,
+        session_id: msg.session_id,
+        role: msg.role,
+        text: msg.text,
+        parts: msg.parts || [],
+        timestamp: toTimestamp(msg.time),
+      }))
+      setMessages(sessionId, normalized)
     } catch (error) {
       console.error('Failed to fetch messages:', error)
       throw error
     }
-  }
+  }, [setMessages])
 
   /**
    * Add a new message to a session
    */
   const addMessageToSession = async (
     sessionId: string,
-    message: Omit<Message, 'id' | 'time'> & { time: Record<string, unknown> }
+    message: { role: MessageRole; content: string }
   ): Promise<Message> => {
     try {
-      const newMessage = await fetchApi<Message>(`/sessions/${sessionId}/messages`, {
+      const newMessage = await fetchApi<MessageResponse>(`/sessions/${sessionId}/messages`, {
         method: 'POST',
         body: JSON.stringify(message),
       })
-      addMessage(sessionId, newMessage)
-      return newMessage
+      const normalized: Message = {
+        id: newMessage.id,
+        session_id: newMessage.session_id,
+        role: newMessage.role,
+        text: newMessage.text,
+        parts: newMessage.parts || [],
+        timestamp: toTimestamp(newMessage.time),
+      }
+      addMessage(sessionId, normalized)
+      return normalized
     } catch (error) {
       console.error('Failed to add message:', error)
       throw error
@@ -49,18 +85,7 @@ export function useMessages() {
     sessionId: string,
     text: string
   ): Promise<Message> => {
-    const message: Omit<Message, 'id' | 'time' | 'metadata'> & {
-      time: Record<string, unknown>
-      metadata?: Record<string, unknown>
-    } = {
-      role: 'user',
-      session_id: sessionId,
-      text,
-      time: {},
-      metadata: {},
-    }
-
-    return addMessageToSession(sessionId, message)
+    return addMessageToSession(sessionId, { role: 'user', content: text })
   }
 
   /**
@@ -71,20 +96,14 @@ export function useMessages() {
     text: string,
     parts: any[] = []
   ): Promise<Message> => {
-    const message: Omit<Message, 'id' | 'time' | 'role' | 'metadata'> & {
-      time: Record<string, unknown>
-      role: MessageRole
-      metadata?: Record<string, unknown>
-    } = {
-      role: 'assistant',
-      session_id: sessionId,
-      text,
-      time: {},
-      metadata: {},
-      parts,
+    const created = await addMessageToSession(sessionId, { role: 'assistant', content: text })
+    if (parts.length > 0) {
+      return {
+        ...created,
+        parts,
+      }
     }
-
-    return addMessageToSession(sessionId, message)
+    return created
   }
 
   /**
@@ -94,18 +113,7 @@ export function useMessages() {
     sessionId: string,
     text: string
   ): Promise<Message> => {
-    const message: Omit<Message, 'id' | 'time' | 'metadata'> & {
-      time: Record<string, unknown>
-      metadata?: Record<string, unknown>
-    } = {
-      role: 'system',
-      session_id: sessionId,
-      text,
-      time: {},
-      metadata: {},
-    }
-
-    return addMessageToSession(sessionId, message)
+    return addMessageToSession(sessionId, { role: 'system', content: text })
   }
 
   return {
