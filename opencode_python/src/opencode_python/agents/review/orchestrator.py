@@ -16,6 +16,7 @@ from opencode_python.agents.review.contracts import (
     Scope,
     ToolPlan,
 )
+from opencode_python.agents.review.discovery import EntryPointDiscovery
 from opencode_python.agents.review.streaming import ReviewStreamManager
 from opencode_python.agents.review.utils.executor import (
     CommandExecutor,
@@ -31,10 +32,13 @@ class PRReviewOrchestrator:
         subagents: List[BaseReviewerAgent],
         command_executor: CommandExecutor | None = None,
         stream_manager: ReviewStreamManager | None = None,
+        discovery: EntryPointDiscovery | None = None,
     ):
         self.subagents = subagents
         self.command_executor = command_executor or CommandExecutor()
         self.stream_manager = stream_manager or ReviewStreamManager()
+        # Entry point discovery module for intelligent context filtering
+        self.discovery = discovery or EntryPointDiscovery()
 
     async def run_review(
         self, inputs: ReviewInputs, stream_callback: Callable | None = None
@@ -284,18 +288,52 @@ class PRReviewOrchestrator:
     ) -> ReviewContext:
         """Build ReviewContext for a specific agent.
 
+        This method performs intelligent context filtering using entry point discovery:
+        1. Discovers entry points relevant to the agent's patterns
+        2. Filters changed_files to only those containing discovered entry points
+        3. Falls back to is_relevant_to_changes() if discovery fails
+
         Args:
             inputs: ReviewInputs with review parameters
             agent: BaseReviewerAgent to build context for
 
         Returns:
-            ReviewContext populated with review data
+            ReviewContext populated with review data (filtered changed_files)
         """
         from opencode_python.agents.review.utils.git import get_changed_files, get_diff
 
-        changed_files = await get_changed_files(
+        agent_name = agent.__class__.__name__
+
+        all_changed_files = await get_changed_files(
             inputs.repo_root, inputs.base_ref, inputs.head_ref
         )
+
+        entry_points = await self.discovery.discover_entry_points(
+            agent_name=agent_name,
+            repo_root=inputs.repo_root,
+            changed_files=all_changed_files,
+        )
+
+        if entry_points is not None:
+            ep_file_set = {ep.file_path for ep in entry_points}
+            filtered_files = [f for f in all_changed_files if f in ep_file_set]
+            logger.info(
+                f"[{agent_name}] Entry point discovery found {len(entry_points)} entry points, "
+                f"filtered to {len(filtered_files)}/{len(all_changed_files)} files"
+            )
+            changed_files = filtered_files
+        else:
+            logger.info(
+                f"[{agent_name}] Entry point discovery returned None, "
+                f"using is_relevant_to_changes() fallback"
+            )
+            if agent.is_relevant_to_changes(all_changed_files):
+                changed_files = all_changed_files
+            else:
+                changed_files = []
+                logger.info(
+                    f"[{agent_name}] Agent not relevant to changes, skipping review"
+                )
 
         diff = await get_diff(inputs.repo_root, inputs.base_ref, inputs.head_ref)
 

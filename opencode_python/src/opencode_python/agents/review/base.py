@@ -382,3 +382,46 @@ class BaseReviewerAgent(ABC):
             "line_numbers": line_numbers,
             "file_path": first_match_file
         }
+
+    def learn_entry_point_pattern(self, pattern: dict) -> bool:
+        """Learn a new entry point pattern from PR review.
+
+        This method allows reviewers to discover and learn new patterns during
+        review. Patterns are staged for manual approval before integration.
+
+        Args:
+            pattern: Pattern dictionary with keys:
+                - type: "ast", "file_path", or "content"
+                - pattern: The pattern string
+                - weight: Relevance weight (0.0-1.0)
+                - language: Optional language field (required for ast/content)
+                - source: Optional source description (e.g., "PR #123")
+
+        Returns:
+            True if pattern was staged successfully, False otherwise
+
+        Example:
+            During review, discover a new security pattern:
+            >>> pattern = {
+            ...     'type': 'content',
+            ...     'pattern': r'AWS_ACCESS_KEY\\s*[=:]',
+            ...     'language': 'python',
+            ...     'weight': 0.95,
+            ...     'source': 'PR #123 - AWS key found in code'
+            ... }
+            >>> self.learn_entry_point_pattern(pattern)
+            True
+
+        Note:
+            This is an optional method. Default implementation does nothing.
+            Reviewers can override this to enable pattern learning.
+        """
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        logger.debug(
+            f"[{self.__class__.__name__}] learn_entry_point_pattern called "
+            f"but not implemented (pattern: {pattern.get('type', 'unknown')})"
+        )
+        return False
