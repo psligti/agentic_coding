@@ -357,17 +357,12 @@ class EntryPointDiscovery:
         return yaml_content, frontmatter
 
     async def _discover_ast_patterns(
-        self,
-        patterns: List[Dict[str, Any]],
-        repo_root: str,
-        changed_files: List[str],
+        self, patterns: List[dict], repo_root: str, changed_files: List[str]
     ) -> List[EntryPoint]:
-        """Discover entry points using AST pattern matching.
-
-        Uses ast_grep_search tool to find AST pattern matches.
+        """Discover entry points using AST patterns via ast-grep.
 
         Args:
-            patterns: List of AST patterns with weight and language
+            patterns: List of pattern dicts with 'pattern', 'language', 'weight'
             repo_root: Path to repository root
             changed_files: List of changed file paths
 
@@ -375,6 +370,23 @@ class EntryPointDiscovery:
             List of EntryPoint objects from AST matches
         """
         entry_points: List[EntryPoint] = []
+
+        # Language to file extension mapping
+        language_extensions = {
+            "python": ".py",
+            "javascript": ".js",
+            "typescript": ".ts",
+            "tsx": ".tsx",
+            "jsx": ".jsx",
+            "go": ".go",
+            "rust": ".rs",
+            "java": ".java",
+            "c": ".c",
+            "cpp": ".cpp",
+            "csharp": ".cs",
+            "ruby": ".rb",
+            "php": ".php",
+        }
 
         for pattern_def in patterns:
             pattern = pattern_def.get("pattern")
@@ -385,8 +397,9 @@ class EntryPointDiscovery:
                 continue
 
             try:
+                extension = language_extensions.get(language, f".{language}")
                 lang_files = [
-                    f for f in changed_files if f.endswith(f".{language}")
+                    f for f in changed_files if f.endswith(extension)
                 ]
 
                 if not lang_files:
@@ -445,24 +458,36 @@ class EntryPointDiscovery:
         return entry_points
 
     async def _discover_content_patterns(
-        self,
-        patterns: List[Dict[str, Any]],
-        repo_root: str,
-        changed_files: List[str],
+        self, patterns: List[dict], repo_root: str, changed_files: List[str]
     ) -> List[EntryPoint]:
-        """Discover entry points using content pattern search.
-
-        Uses grep tool to find regex pattern matches in file contents.
+        """Discover entry points using content patterns via ripgrep.
 
         Args:
-            patterns: List of content patterns with weight and language
+            patterns: List of pattern dicts with 'pattern', 'language', 'weight'
             repo_root: Path to repository root
             changed_files: List of changed file paths
 
         Returns:
-            List of EntryPoint objects from content matches
+            List of EntryPoint objects from content pattern matches
         """
         entry_points: List[EntryPoint] = []
+
+        # Language to file extension mapping (same as _discover_ast_patterns)
+        language_extensions = {
+            "python": ".py",
+            "javascript": ".js",
+            "typescript": ".ts",
+            "tsx": ".tsx",
+            "jsx": ".jsx",
+            "go": ".go",
+            "rust": ".rs",
+            "java": ".java",
+            "c": ".c",
+            "cpp": ".cpp",
+            "csharp": ".cs",
+            "ruby": ".rb",
+            "php": ".php",
+        }
 
         for pattern_def in patterns:
             pattern = pattern_def.get("pattern")
@@ -473,8 +498,9 @@ class EntryPointDiscovery:
                 continue
 
             try:
+                extension = language_extensions.get(language, f".{language}")
                 lang_files = [
-                    f for f in changed_files if f.endswith(f".{language}")
+                    f for f in changed_files if f.endswith(extension)
                 ]
 
                 if not lang_files:

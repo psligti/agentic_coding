@@ -1,3 +1,25 @@
+---
+agent: entry-point-examples
+agent_type: optional
+version: 1.0.0
+generated_at: 2026-02-03T21:05:04Z
+prompt_hash: refdoc123
+patterns:
+  - type: ast
+    pattern: "ClassDef with decorator '@dataclass'"
+    language: python
+    weight: 0.8
+  - type: ast
+    pattern: "ClassDef with decorator '@singleton'"
+    language: python
+    weight: 0.85
+  - type: file_path
+    pattern: "**/*.py"
+    weight: 0.7
+heuristics:
+  - "This is a reference document, not an agent-specific config"
+---
+
 # Entry Point Examples for PR Review Agents
 
 This document provides comprehensive entry point examples for all 11 PR review agents. Each agent includes AST patterns, file path patterns, and heuristic rules with appropriate weights.

@@ -7,7 +7,7 @@ from textual.screen import ModalScreen
 from textual.widgets import ListView, ListItem, Static, Label
 
 from opencode_python.providers.base import ModelInfo
-from opencode_python.core.settings import get_settings
+from opencode_python.core.settings import settings
 
 
 class ModelSelectDialog(ModalScreen[ModelInfo]):
@@ -139,7 +139,6 @@ class ModelSelectDialog(ModalScreen[ModelInfo]):
         Args:
             model: ModelInfo to persist.
         """
-        settings = get_settings()
         settings.model_default = model.id
         settings.provider_default = model.provider_id.value
 

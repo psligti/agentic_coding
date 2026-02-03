@@ -2,12 +2,18 @@
 from __future__ import annotations
 from typing import Optional, Dict
 from pathlib import Path
+import os
 import pydantic_settings
 from pydantic import Field, SecretStr
-from pydantic_settings import SettingsConfigDict
+from pydantic_settings.main import SettingsConfigDict
+from dotenv import load_dotenv
+
+load_dotenv(str(Path(__file__).parent.parent.parent.parent / ".env"))
 
 
-__all__ = ["Settings", "get_settings", "settings"]
+__all__ = ["Settings", "settings"]
+
+from opencode_python.providers import ProviderID
 
 
 class Settings(pydantic_settings.BaseSettings):
@@ -19,16 +25,17 @@ class Settings(pydantic_settings.BaseSettings):
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
     # API credentials (secrets)
-    api_key: SecretStr = Field(default_factory=lambda: SecretStr(""), alias="API_KEY")
-    api_keys: Dict[str, SecretStr] = Field(default_factory=dict, alias="API_KEYS")
+    api_key: SecretStr = Field(default_factory=lambda: SecretStr(""))
+    api_keys: Dict[str, SecretStr] = Field(default_factory=dict)
+    api_keys_coding: Dict[str, SecretStr] = Field(default_factory=dict)
     api_endpoint: str = Field(
         default="https://api.open-code.ai/v1",
         alias="API_ENDPOINT"
     )
 
     # Provider settings
-    provider_default: str = Field(default="anthropic", alias="PROVIDER_DEFAULT")
-    model_default: str = Field(default="claude-3-5-sonnet-20241022", alias="MODEL_DEFAULT")
+    provider_default: str = Field(default=os.getenv("OPENCODE_PYTHON_PROVIDER_DEFAULT", "z.ai"), alias="PROVIDER_DEFAULT")
+    model_default: str = Field(default=os.getenv("OPENCODE_PYTHON_MODEL_DEFAULT", "glm-4.7"), alias="MODEL_DEFAULT")
 
     # Filesystem paths
     storage_dir: str = Field(
@@ -67,7 +74,7 @@ class Settings(pydantic_settings.BaseSettings):
     permission_default_action: str = Field(default="ask", alias="PERMISSION_DEFAULT_ACTION")
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file='.env',
         env_file_encoding="utf-8",
         env_prefix="OPENCODE_PYTHON_",
         case_sensitive=False,
@@ -75,44 +82,4 @@ class Settings(pydantic_settings.BaseSettings):
     )
 
 
-# Global settings instance
-_settings: Optional[Settings] = None
-
-
-def get_settings() -> Settings:
-    """Get singleton settings instance
-
-    Lazily loads settings once and caches the instance.
-    """
-    global _settings
-    if _settings is None:
-        _settings = Settings()
-    return _settings
-
-
-settings: Settings = get_settings()
-
-
-def reload_settings() -> Settings:
-    """Reload settings from environment and config files
-
-    Useful for testing or when settings need to be refreshed.
-    """
-    global _settings
-    _settings = Settings()
-    return _settings
-
-
-def get_storage_dir() -> Path:
-    """Get resolved storage directory path"""
-    return Path(get_settings().storage_dir).expanduser()
-
-
-def get_config_dir() -> Path:
-    """Get resolved config directory path"""
-    return Path(get_settings().config_dir).expanduser()
-
-
-def get_cache_dir() -> Path:
-    """Get resolved cache directory path"""
-    return Path(get_settings().cache_dir).expanduser()
+settings: Settings = Settings()

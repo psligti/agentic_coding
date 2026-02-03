@@ -3,9 +3,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from typing import AsyncGenerator, Any, Dict, List, Optional, Literal
 

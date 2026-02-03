@@ -52,7 +52,7 @@ dev = [
 ]
 
 [project.scripts]
-opencode = "opencode_python.cli:cli"
+parkcode = "opencode_python.cli:cli"
 
 [dependency-groups]
 dev = [

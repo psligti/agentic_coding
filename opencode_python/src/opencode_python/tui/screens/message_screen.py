@@ -28,7 +28,7 @@ from opencode_python.tui.message_view import MessageView
 from opencode_python.ai_session import AISession
 from opencode_python.providers import get_provider, ProviderID
 from opencode_python.providers.base import StreamEvent
-from opencode_python.core.settings import get_settings
+from opencode_python.core.settings import settings
 
 
 logger = logging.getLogger(__name__)
@@ -275,8 +275,6 @@ class MessageScreen(Screen):
 
             await self._display_message(self._current_assistant_message, is_streaming=True)
             self._scroll_to_bottom()
-
-            settings = get_settings()
 
             provider_id = ProviderID.ANTHROPIC
             model = "claude-sonnet-4-20250514"

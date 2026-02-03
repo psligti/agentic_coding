@@ -8,6 +8,7 @@ class ProviderID(str, Enum):
     ANTHROPIC = "anthropic"
     OPENAI = "openai"
     Z_AI = "z.ai"
+    Z_AI_CODING_PLAN = "zai-coding-plan"
     GOOGLE = "google"
     GOOGLE_VERTEX = "google-vertex"
     AMAZON_BEDROCK = "amazon-bedrock"

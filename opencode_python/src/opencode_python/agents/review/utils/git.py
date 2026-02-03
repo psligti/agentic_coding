@@ -94,7 +94,7 @@ async def get_diff(repo_root: str, base_ref: str, head_ref: str) -> str:
         raise InvalidRefError(f"Invalid Git reference: {e}") from e
 
     diff_text = []
-    for diff_item in base_commit.diff(head_commit):
+    for diff_item in base_commit.diff(head_commit, create_patch=True):
         if diff_item.diff:
             diff_text.append(diff_item.diff.decode("utf-8", errors="ignore"))
 

@@ -7,8 +7,6 @@ from textual.containers import Vertical, Horizontal
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, ListItem, ListView, Static, Input, DataTable, Footer
 
-from opencode_python.core.settings import Settings, get_settings
-
 T = TypeVar("T")
 
 from .model_select_dialog import ModelSelectDialog

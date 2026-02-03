@@ -4,9 +4,10 @@ agent_type: required
 version: 1.0.0
 generated_at: 2026-02-03T17:55:41Z
 prompt_hash: d4a013dbd09e5ef6d886a562
+
 patterns:
   - type: content
-    pattern: "password\\s*[=:]|secret\\s*[=:]|token\\s*[=:]|api_key\\s*[=:]"
+    pattern: "password|secret|token|api_key"
     language: python
     weight: 0.95
   - type: content
@@ -17,6 +18,10 @@ patterns:
     pattern: "**/*"
     weight: 0.7
 heuristics:
+  - Check for large files with more than 200 lines changed
+  - Identify complex functions with more than 30 lines
+  - Analyze file changes for diff complexity
+
 ---
 
 # Diff Scoper Reviewer Entry Points
@@ -36,23 +41,15 @@ File path patterns match against changed file paths using glob patterns.
 Content patterns use regex to search for specific strings in file contents.
 
 **High-weight patterns (0.9+):**
-- `password\\s*[=:]|secret\\s*[=:]|token\\s*[=:]|api_key\\s*[=:]`
+- `password|secret|token|api_key`
 
 **Medium patterns (0.7-0.9):**
-- `.{120,}`
+- `.{120,}` - Checks for functions with many arguments
 
 ## Usage During Review
 
 1. When a PR is received, diff scoper reviewer loads this document
 2. For each pattern, reviewer searches changed files
-3. Matches are collected and weighted by relevance
-4. Top matches are included in the LLM context for analysis
-5. Verification evidence is attached to `ReviewOutput.extra_data["verification"]`
-
-## Maintenance
-
-This document should be regenerated when diff scoper reviewer's system prompt changes to keep entry points in sync with the agent's focus.
-
-```bash
-opencode review generate-docs --agent diff_scoper
-```
+3. Discovered entry points are sorted by weight (highest first)
+4. Top entry points are used to build focused review context
+5. Heuristics provide additional guidance for manual review

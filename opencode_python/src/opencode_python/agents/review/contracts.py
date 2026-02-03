@@ -9,7 +9,7 @@ class Scope(pd.BaseModel):
     ignored_files: List[str] = pd.Field(default_factory=list)
     reasoning: str
 
-    model_config = pd.ConfigDict(extra="forbid")
+    model_config = pd.ConfigDict(extra="ignore")
 
 
 class Check(pd.BaseModel):
@@ -19,7 +19,7 @@ class Check(pd.BaseModel):
     why: str
     expected_signal: str | None = None
 
-    model_config = pd.ConfigDict(extra="forbid")
+    model_config = pd.ConfigDict(extra="ignore")
 
 
 class Skip(pd.BaseModel):
@@ -27,7 +27,7 @@ class Skip(pd.BaseModel):
     why_safe: str
     when_to_run: str
 
-    model_config = pd.ConfigDict(extra="forbid")
+    model_config = pd.ConfigDict(extra="ignore")
 
 
 class Finding(pd.BaseModel):
@@ -51,7 +51,7 @@ class MergeGate(pd.BaseModel):
     should_fix: List[str] = pd.Field(default_factory=list)
     notes_for_coding_agent: List[str] = pd.Field(default_factory=list)
 
-    model_config = pd.ConfigDict(extra="forbid")
+    model_config = pd.ConfigDict(extra="ignore")
 
 
 class ReviewOutput(pd.BaseModel):
@@ -64,7 +64,7 @@ class ReviewOutput(pd.BaseModel):
     findings: List[Finding] = pd.Field(default_factory=list)
     merge_gate: MergeGate
 
-    model_config = pd.ConfigDict(extra="forbid")
+    model_config = pd.ConfigDict(extra="ignore")
 
 
 class ReviewInputs(pd.BaseModel):
@@ -75,9 +75,9 @@ class ReviewInputs(pd.BaseModel):
     pr_description: str = ""
     ticket_description: str = ""
     include_optional: bool = False
-    timeout_seconds: int = 60
+    timeout_seconds: int = 300
 
-    model_config = pd.ConfigDict(extra="forbid")
+    model_config = pd.ConfigDict(extra="ignore")
 
 
 class ToolPlan(pd.BaseModel):
@@ -85,7 +85,7 @@ class ToolPlan(pd.BaseModel):
     auto_fix_available: bool = False
     execution_summary: str = ""
 
-    model_config = pd.ConfigDict(extra="forbid")
+    model_config = pd.ConfigDict(extra="ignore")
 
 
 class OrchestratorOutput(pd.BaseModel):
@@ -96,11 +96,11 @@ class OrchestratorOutput(pd.BaseModel):
     summary: str = ""
     total_findings: int = 0
 
-    model_config = pd.ConfigDict(extra="forbid")
+    model_config = pd.ConfigDict(extra="ignore")
 
 
 def get_review_output_schema() -> str:
-    """Return the JSON schema for ReviewOutput as a string for inclusion in prompts.
+    """Return JSON schema for ReviewOutput as a string for inclusion in prompts.
 
     This schema must match exactly the ReviewOutput Pydantic model above.
     Any changes to the model must be reflected here.
@@ -108,61 +108,70 @@ def get_review_output_schema() -> str:
     Returns:
         JSON schema string with explicit type information
     """
-    return '''You MUST output valid JSON matching this exact schema:
 
-{
-  "agent": "string - your agent name",
-  "summary": "string - brief summary of your review",
-  "severity": "one of: 'merge', 'warning', 'critical', 'blocking'",
-  "scope": {
-    "relevant_files": ["array of strings - files you reviewed"],
-    "ignored_files": ["array of strings - files you chose to ignore"],
-    "reasoning": "string - explain why these files are relevant/ignored"
-  },
-  "checks": [
-    {
-      "name": "string - name of check",
-      "required": "boolean - is this check mandatory?",
-      "commands": ["array of strings - commands to run"],
-      "why": "string - why this check is needed",
-      "expected_signal": "string or null - what success looks like (optional)"
-    }
-  ],
-  "skips": [
-    {
-      "name": "string - name of skipped check",
-      "why_safe": "string - why it's safe to skip now",
-      "when_to_run": "string - when should this check run instead?"
-    }
-  ],
-  "findings": [
-    {
-      "id": "string - unique identifier (e.g., AGENT-001)",
-      "title": "string - short descriptive title",
-      "severity": "one of: 'warning', 'critical', 'blocking'",
-      "confidence": "one of: 'high', 'medium', 'low'",
-      "owner": "one of: 'dev', 'docs', 'devops', 'security'",
-      "estimate": "one of: 'S', 'M', 'L' - fix effort estimate",
-      "evidence": "string - specific code/reasoning supporting the finding",
-      "risk": "string - what could go wrong if not fixed",
-      "recommendation": "string - specific action to fix",
-      "suggested_patch": "string or null - optional code patch suggestion"
-    }
-  ],
-  "merge_gate": {
-    "decision": "one of: 'approve', 'needs_changes', 'block'",
-    "must_fix": ["array of strings - blocking issues that must be fixed"],
-    "should_fix": ["array of strings - non-blocking improvements"],
-    "notes_for_coding_agent": ["array of strings - specific guidance for the coding agent"]
-  }
-}
+    return f'''You MUST output valid JSON matching this exact schema. Do NOT add any fields outside this schema:
 
-CRITICAL RULES:
+{ReviewOutput.model_json_schema()}
+
+ CRITICAL RULES:
 - Include ALL required fields: agent, summary, severity, scope, merge_gate
 - NEVER include extra fields not in this schema (will cause validation errors)
+- For findings: NEVER include fields like 'type', 'message' - only use the fields listed above
 - severity in findings is NOT the same as severity in the root object
 - findings severity options: 'warning', 'critical', 'blocking' (NOT 'merge')
 - root severity options: 'merge', 'warning', 'critical', 'blocking'
-- All fields are MANDATORY unless marked as optional with "optional"
+- All fields are MANDATORY unless marked as optional with "or null"
 - Empty arrays are allowed: [], null values are allowed only where specified
-- Return ONLY the JSON object, no other text or markdown'''
+- Return ONLY the JSON object, no other text, no markdown code blocks
+
+EXAMPLE VALID OUTPUT:
+{{
+  "agent": "security",
+  "summary": "No security issues found",
+  "severity": "merge",
+  "scope": {{
+    "relevant_files": ["file1.py", "file2.py"],
+    "ignored_files": [],
+    "reasoning": "Reviewed all changed files for security vulnerabilities"
+  }},
+  "checks": [],
+  "skips": [],
+  "findings": [],
+  "merge_gate": {{
+    "decision": "approve",
+    "must_fix": [],
+    "should_fix": [],
+    "notes_for_coding_agent": ["Review complete"]
+  }}
+}}
+
+EXAMPLE WITH FINDING:
+{{
+  "agent": "security",
+  "summary": "Found potential secret in code",
+  "severity": "blocking",
+  "scope": {{
+    "relevant_files": ["config.py"],
+    "ignored_files": [],
+    "reasoning": "Found hardcoded API key"
+  }},
+  "checks": [],
+  "skips": [],
+  "findings": [
+    {{
+      "id": "SEC-001",
+      "title": "Hardcoded API key",
+      "severity": "blocking",
+      "confidence": "high",
+      "estimate": "S",
+      "evidence": "Line 45 contains API_KEY='sk-12345'",
+      "risk": "Secret exposed in source code",
+    }}
+  ],
+  "merge_gate": {{
+    "decision": "block",
+    "must_fix": ["Hardcoded API key in config.py"],
+    "should_fix": [],
+    "notes_for_coding_agent": ["Rotate API key immediately"]
+  }}
+}}'''
