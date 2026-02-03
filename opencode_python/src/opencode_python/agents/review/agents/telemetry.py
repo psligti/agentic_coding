@@ -7,8 +7,8 @@ from opencode_python.agents.review.base import BaseReviewerAgent, ReviewContext
 from opencode_python.agents.review.contracts import (
     ReviewOutput,
     Scope,
-    Finding,
     MergeGate,
+    get_review_output_schema,
 )
 from opencode_python.ai_session import AISession
 from opencode_python.core.models import Session
@@ -16,7 +16,23 @@ from opencode_python.core.settings import settings
 import uuid
 
 
-TELEMETRY_SYSTEM_PROMPT = """You are the Telemetry & Metrics Review Subagent.
+class TelemetryMetricsReviewer(BaseReviewerAgent):
+    """Telemetry reviewer agent that checks for logging quality and observability coverage.
+
+    This agent specializes in detecting:
+    - Logging quality (proper log levels, structured logging)
+    - Error reporting (exceptions raised with context)
+    - Observability coverage (metrics, traces, distributed tracing)
+    - Silent failures (swallowed exceptions)
+    """
+
+    def get_agent_name(self) -> str:
+        """Return the agent identifier."""
+        return "telemetry"
+
+    def get_system_prompt(self) -> str:
+        """Get the system prompt for the telemetry reviewer."""
+        return f"""You are the Telemetry & Metrics Review Subagent.
 
 Use this shared behavior:
 - Identify which changed files/diffs are relevant to observability.
@@ -48,27 +64,9 @@ Blocking:
 - retry loops without visibility or limits (runaway risk)
 - high-cardinality metric labels introduced
 
-Output MUST be valid JSON only with agent="telemetry_metrics" and the standard schema.
-Return JSON only."""
+{get_review_output_schema()}
 
-
-class TelemetryMetricsReviewer(BaseReviewerAgent):
-    """Telemetry reviewer agent that checks for logging quality and observability coverage.
-
-    This agent specializes in detecting:
-    - Logging quality (proper log levels, structured logging)
-    - Error reporting (exceptions raised with context)
-    - Observability coverage (metrics, traces, distributed tracing)
-    - Silent failures (swallowed exceptions)
-    """
-
-    def get_agent_name(self) -> str:
-        """Return the agent identifier."""
-        return "telemetry"
-
-    def get_system_prompt(self) -> str:
-        """Get the system prompt for the telemetry reviewer."""
-        return TELEMETRY_SYSTEM_PROMPT
+Your agent name is "telemetry"."""
 
     def get_relevant_file_patterns(self) -> List[str]:
         """Get file patterns relevant to telemetry review."""
@@ -142,7 +140,9 @@ Please analyze the above changes for telemetry and observability issues and prov
                 raise ValueError("Empty response from LLM")
 
             try:
-                output = ReviewOutput.model_validate_json(response_message.text)
+                from opencode_python.utils.json_parser import strip_json_code_blocks
+                cleaned_text = strip_json_code_blocks(response_message.text)
+                output = ReviewOutput.model_validate_json(cleaned_text)
             except pd.ValidationError as e:
                 return ReviewOutput(
                     agent=self.get_agent_name(),

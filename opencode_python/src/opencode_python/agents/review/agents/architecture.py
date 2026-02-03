@@ -8,8 +8,8 @@ from opencode_python.agents.review.base import BaseReviewerAgent, ReviewContext
 from opencode_python.agents.review.contracts import (
     ReviewOutput,
     Scope,
-    Finding,
     MergeGate,
+    get_review_output_schema,
 )
 from opencode_python.ai_session import AISession
 from opencode_python.core.models import Session
@@ -26,7 +26,13 @@ class ArchitectureReviewer(BaseReviewerAgent):
     - Backwards compatibility concerns
     """
 
-    _SYSTEM_PROMPT = """You are the Architecture Review Subagent.
+    def get_agent_name(self) -> str:
+        """Return the agent name."""
+        return "architecture"
+
+    def get_system_prompt(self) -> str:
+        """Return the system prompt for this reviewer agent."""
+        return f"""You are the Architecture Review Subagent.
 
 Use this shared behavior:
 - Identify which changed files/diffs are relevant to architecture.
@@ -65,44 +71,14 @@ Common blocking issues:
 - configuration hard-coded into business logic
 - breaking changes without migration path
 
-Output MUST be valid JSON only with this schema:
+{get_review_output_schema()}
 
-{
-  "agent": "architecture",
-  "summary": "...",
-  "severity": "merge|warning|critical|blocking",
-  "scope": { "relevant_files": [], "ignored_files": [], "reasoning": "..." },
-  "checks": [{ "name": "...", "required": true, "commands": [], "why": "...", "expected_signal": "..." }],
-  "skips": [{ "name": "...", "why_safe": "...", "when_to_run": "..." }],
-  "findings": [{
-    "id": "ARCH-001",
-    "title": "...",
-    "severity": "warning|critical|blocking",
-    "confidence": "high|medium|low",
-    "owner": "dev|docs|devops|security",
-    "estimate": "S|M|L",
-    "evidence": "...",
-    "risk": "...",
-    "recommendation": "...",
-    "suggested_patch": "..."
-  }],
-  "merge_gate": { "decision": "approve|needs_changes|block", "must_fix": [], "should_fix": [], "notes_for_coding_agent": [] }
-}
+Your agent name is "architecture"."
 
 Rules:
 - If there are no relevant files, return severity "merge" and note "no relevant changes".
 - Tie every finding to evidence. No vague statements.
-- If you recommend skipping a check, explain why it's safe.
-Return JSON only.
-"""
-
-    def get_agent_name(self) -> str:
-        """Return the agent name."""
-        return "architecture"
-
-    def get_system_prompt(self) -> str:
-        """Return the system prompt for this reviewer agent."""
-        return self._SYSTEM_PROMPT
+- If you recommend skipping a check, explain why it's safe."""
 
     def get_relevant_file_patterns(self) -> List[str]:
         """Return file patterns this reviewer is relevant to."""
@@ -169,7 +145,9 @@ Please analyze the above changes for architectural issues and provide your revie
                 raise ValueError("Empty response from LLM")
 
             try:
-                output = ReviewOutput.model_validate_json(response_message.text)
+                from opencode_python.utils.json_parser import strip_json_code_blocks
+                cleaned_text = strip_json_code_blocks(response_message.text)
+                output = ReviewOutput.model_validate_json(cleaned_text)
             except pd.ValidationError as e:
                 return ReviewOutput(
                     agent=self.get_agent_name(),

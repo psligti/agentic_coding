@@ -3,9 +3,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import List, Callable
+from typing import List, Callable, Literal
 
-import pydantic as pd
 
 from opencode_python.agents.review.base import BaseReviewerAgent, ReviewContext
 from opencode_python.agents.review.contracts import (
@@ -17,7 +16,7 @@ from opencode_python.agents.review.contracts import (
     Scope,
     ToolPlan,
 )
-from opencode_python.agents.review.streaming import ReviewStreamManager, StreamEventType
+from opencode_python.agents.review.streaming import ReviewStreamManager
 from opencode_python.agents.review.utils.executor import (
     CommandExecutor,
     ExecutionResult,
@@ -176,6 +175,7 @@ class PRReviewOrchestrator:
         """
         must_fix = []
         should_fix = []
+        decision: Literal["approve", "needs_changes", "block"] = "approve"
 
         for result in results:
             must_fix.extend(result.merge_gate.must_fix)

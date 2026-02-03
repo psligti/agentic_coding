@@ -7,8 +7,8 @@ from opencode_python.agents.review.base import BaseReviewerAgent, ReviewContext
 from opencode_python.agents.review.contracts import (
     ReviewOutput,
     Scope,
-    Finding,
     MergeGate,
+    get_review_output_schema,
 )
 from opencode_python.ai_session import AISession
 from opencode_python.core.models import Session
@@ -16,7 +16,24 @@ from opencode_python.core.settings import settings
 import uuid
 
 
-SECURITY_SYSTEM_PROMPT = """You are the Security Review Subagent.
+class SecurityReviewer(BaseReviewerAgent):
+    """Security reviewer agent that checks for security vulnerabilities.
+
+    This agent specializes in detecting:
+    - Secrets handling (API keys, passwords, tokens)
+    - Authentication/authorization issues
+    - Injection risks (SQL, XSS, command)
+    - CI/CD exposures
+    - Unsafe code execution patterns
+    """
+
+    def get_agent_name(self) -> str:
+        """Return the agent identifier."""
+        return "security"
+
+    def get_system_prompt(self) -> str:
+        """Get the system prompt for the security reviewer."""
+        return f"""You are the Security Review Subagent.
 
 Use this shared behavior:
 - Identify which changed files/diffs are relevant to security.
@@ -60,28 +77,9 @@ Blocking conditions:
 - command injection risk via subprocess with untrusted input
 - unsafe deserialization of untrusted input
 
-Output MUST be valid JSON only with agent="security" and the standard schema.
-Return JSON only."""
+{get_review_output_schema()}
 
-
-class SecurityReviewer(BaseReviewerAgent):
-    """Security reviewer agent that checks for security vulnerabilities.
-
-    This agent specializes in detecting:
-    - Secrets handling (API keys, passwords, tokens)
-    - Authentication/authorization issues
-    - Injection risks (SQL, XSS, command)
-    - CI/CD exposures
-    - Unsafe code execution patterns
-    """
-
-    def get_agent_name(self) -> str:
-        """Return the agent identifier."""
-        return "security"
-
-    def get_system_prompt(self) -> str:
-        """Get the system prompt for the security reviewer."""
-        return SECURITY_SYSTEM_PROMPT
+Your agent name is "security"."""
 
     def get_relevant_file_patterns(self) -> List[str]:
         """Get file patterns relevant to security review."""
@@ -165,7 +163,9 @@ Please analyze the above changes for security vulnerabilities and provide your r
                 raise ValueError("Empty response from LLM")
 
             try:
-                output = ReviewOutput.model_validate_json(response_message.text)
+                from opencode_python.utils.json_parser import strip_json_code_blocks
+                cleaned_text = strip_json_code_blocks(response_message.text)
+                output = ReviewOutput.model_validate_json(cleaned_text)
             except pd.ValidationError as e:
                 return ReviewOutput(
                     agent=self.get_agent_name(),

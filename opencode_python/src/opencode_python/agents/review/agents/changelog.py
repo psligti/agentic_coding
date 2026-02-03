@@ -8,16 +8,14 @@ Reviews code changes for release hygiene including:
 """
 
 from __future__ import annotations
-from typing import List, Optional
+from typing import List
 
 from opencode_python.agents.review.base import BaseReviewerAgent, ReviewContext
 from opencode_python.agents.review.contracts import (
     ReviewOutput,
-    Finding,
     Scope,
     MergeGate,
-    Check,
-    Skip,
+    get_review_output_schema,
 )
 from opencode_python.ai_session import AISession
 from opencode_python.core.models import Session
@@ -26,7 +24,17 @@ import pydantic as pd
 import uuid
 
 
-SYSTEM_PROMPT = """You are the Release & Changelog Review Subagent.
+class ReleaseChangelogReviewer(BaseReviewerAgent):
+    """Reviewer agent for release hygiene and changelog compliance."""
+
+    def __init__(self) -> None:
+        self.agent_name = "release_changelog"
+
+    def get_agent_name(self) -> str:
+        return self.agent_name
+
+    def get_system_prompt(self) -> str:
+        return f"""You are the Release & Changelog Review Subagent.
 
 Use this shared behavior:
 - If user-visible behavior changes, ensure release hygiene artifacts are updated.
@@ -50,21 +58,9 @@ Severity:
 - warning for missing changelog entry
 - critical for breaking change without migration note
 
-Return JSON with agent="release_changelog" using the standard schema.
-Return JSON only."""
+{get_review_output_schema()}
 
-
-class ReleaseChangelogReviewer(BaseReviewerAgent):
-    """Reviewer agent for release hygiene and changelog compliance."""
-
-    def __init__(self) -> None:
-        self.agent_name = "release_changelog"
-
-    def get_agent_name(self) -> str:
-        return self.agent_name
-
-    def get_system_prompt(self) -> str:
-        return SYSTEM_PROMPT
+Your agent name is "release_changelog"."""
 
     def get_relevant_file_patterns(self) -> List[str]:
         return [
@@ -139,7 +135,9 @@ Please analyze the above changes for release hygiene and changelog compliance an
                 raise ValueError("Empty response from LLM")
 
             try:
-                output = ReviewOutput.model_validate_json(response_message.text)
+                from opencode_python.utils.json_parser import strip_json_code_blocks
+                cleaned_text = strip_json_code_blocks(response_message.text)
+                output = ReviewOutput.model_validate_json(cleaned_text)
             except pd.ValidationError as e:
                 return ReviewOutput(
                     agent=self.get_agent_name(),

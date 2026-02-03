@@ -8,15 +8,32 @@ from opencode_python.agents.review.base import BaseReviewerAgent, ReviewContext
 from opencode_python.agents.review.contracts import (
     ReviewOutput,
     Scope,
-    Finding,
     MergeGate,
+    get_review_output_schema,
 )
 from opencode_python.ai_session import AISession
 from opencode_python.core.models import Session
 from opencode_python.core.settings import settings
 import uuid
 
-PERFORMANCE_SYSTEM_PROMPT = """You are the Performance & Reliability Review Subagent.
+
+class PerformanceReliabilityReviewer(BaseReviewerAgent):
+    """Reviewer agent for performance and reliability checks.
+
+    Checks for:
+    - Code complexity (nested loops, deep nesting, cyclomatic complexity)
+    - IO amplification (N+1 database queries, excessive API calls in loops)
+    - Retry logic (exponential backoff, proper retry policies)
+    - Concurrency issues (race conditions, missing locks, shared state)
+    """
+
+    def get_agent_name(self) -> str:
+        """Return the agent name."""
+        return "performance"
+
+    def get_system_prompt(self) -> str:
+        """Return the system prompt for this reviewer."""
+        return f"""You are the Performance & Reliability Review Subagent.
 
 Use this shared behavior:
 - If changed_files or diff are missing, request them.
@@ -46,27 +63,9 @@ Blocking:
 - missing timeouts on network calls in critical paths
 - concurrency bugs with shared mutable state
 
-Return JSON with agent="performance" using the standard schema.
-Return JSON only."""
+{get_review_output_schema()}
 
-
-class PerformanceReliabilityReviewer(BaseReviewerAgent):
-    """Reviewer agent for performance and reliability checks.
-
-    Checks for:
-    - Code complexity (nested loops, deep nesting, cyclomatic complexity)
-    - IO amplification (N+1 database queries, excessive API calls in loops)
-    - Retry logic (exponential backoff, proper retry policies)
-    - Concurrency issues (race conditions, missing locks, shared state)
-    """
-
-    def get_agent_name(self) -> str:
-        """Return the agent name."""
-        return "performance"
-
-    def get_system_prompt(self) -> str:
-        """Return the system prompt for this reviewer."""
-        return PERFORMANCE_SYSTEM_PROMPT
+Your agent name is "performance"."""
 
     def get_relevant_file_patterns(self) -> List[str]:
         """Return file patterns this reviewer is relevant to."""
@@ -146,7 +145,9 @@ Please analyze the above changes for performance and reliability issues and prov
                 raise ValueError("Empty response from LLM")
 
             try:
-                output = ReviewOutput.model_validate_json(response_message.text)
+                from opencode_python.utils.json_parser import strip_json_code_blocks
+                cleaned_text = strip_json_code_blocks(response_message.text)
+                output = ReviewOutput.model_validate_json(cleaned_text)
             except pd.ValidationError as e:
                 return ReviewOutput(
                     agent=self.get_agent_name(),

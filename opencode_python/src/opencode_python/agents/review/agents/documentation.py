@@ -15,8 +15,8 @@ from opencode_python.agents.review.base import BaseReviewerAgent, ReviewContext
 from opencode_python.agents.review.contracts import (
     ReviewOutput,
     Scope,
-    Finding,
     MergeGate,
+    get_review_output_schema,
 )
 from opencode_python.ai_session import AISession
 from opencode_python.core.models import Session
@@ -24,7 +24,23 @@ from opencode_python.core.settings import settings
 import uuid
 
 
-DOCUMENTATION_SYSTEM_PROMPT = """You are the Documentation Review Subagent.
+class DocumentationReviewer(BaseReviewerAgent):
+    """Documentation reviewer agent that checks for documentation coverage.
+
+    This agent specializes in detecting:
+    - Missing docstrings for public functions/classes
+    - Outdated or missing README documentation
+    - Missing configuration documentation
+    - Missing usage examples
+    """
+
+    def get_agent_name(self) -> str:
+        """Return the agent identifier."""
+        return "documentation"
+
+    def get_system_prompt(self) -> str:
+        """Get the system prompt for the documentation reviewer."""
+        return f"""You are the Documentation Review Subagent.
 
 Use this shared behavior:
 - Identify which changed files/diffs are relevant to documentation.
@@ -60,27 +76,9 @@ Severity guidance:
 - critical: behavior changed but docs claim old behavior; config/env changes undocumented
 - blocking: public interface changed with no documentation and high risk of misuse
 
-Output MUST be valid JSON only with agent="documentation" and the standard schema.
-Return JSON only."""
+{get_review_output_schema()}
 
-
-class DocumentationReviewer(BaseReviewerAgent):
-    """Documentation reviewer agent that checks for documentation coverage.
-
-    This agent specializes in detecting:
-    - Missing docstrings for public functions/classes
-    - Outdated or missing README documentation
-    - Missing configuration documentation
-    - Missing usage examples
-    """
-
-    def get_agent_name(self) -> str:
-        """Return the agent identifier."""
-        return "documentation"
-
-    def get_system_prompt(self) -> str:
-        """Get the system prompt for the documentation reviewer."""
-        return DOCUMENTATION_SYSTEM_PROMPT
+Your agent name is "documentation"."""
 
     def get_relevant_file_patterns(self) -> List[str]:
         """Get file patterns relevant to documentation review."""
@@ -155,7 +153,9 @@ Please analyze the above changes for documentation coverage and provide your rev
                 raise ValueError("Empty response from LLM")
 
             try:
-                output = ReviewOutput.model_validate_json(response_message.text)
+                from opencode_python.utils.json_parser import strip_json_code_blocks
+                cleaned_text = strip_json_code_blocks(response_message.text)
+                output = ReviewOutput.model_validate_json(cleaned_text)
             except pd.ValidationError as e:
                 return ReviewOutput(
                     agent=self.get_agent_name(),

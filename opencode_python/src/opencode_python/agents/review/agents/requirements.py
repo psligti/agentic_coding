@@ -4,7 +4,7 @@ from typing import List
 import pydantic as pd
 
 from opencode_python.agents.review.base import BaseReviewerAgent, ReviewContext
-from opencode_python.agents.review.contracts import ReviewOutput, Scope, Finding, MergeGate
+from opencode_python.agents.review.contracts import ReviewOutput, Scope, MergeGate
 from opencode_python.ai_session import AISession
 from opencode_python.core.models import Session
 from opencode_python.core.settings import settings
@@ -118,7 +118,9 @@ Please analyze the above changes for requirements compliance and provide your re
                 raise ValueError("Empty response from LLM")
 
             try:
-                output = ReviewOutput.model_validate_json(response_message.text)
+                from opencode_python.utils.json_parser import strip_json_code_blocks
+                cleaned_text = strip_json_code_blocks(response_message.text)
+                output = ReviewOutput.model_validate_json(cleaned_text)
             except pd.ValidationError as e:
                 return ReviewOutput(
                     agent=self.get_agent_name(),

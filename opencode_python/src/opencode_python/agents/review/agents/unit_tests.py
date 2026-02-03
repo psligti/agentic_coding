@@ -7,8 +7,8 @@ from opencode_python.agents.review.base import BaseReviewerAgent, ReviewContext
 from opencode_python.agents.review.contracts import (
     ReviewOutput,
     Scope,
-    Finding,
     MergeGate,
+    get_review_output_schema,
 )
 from opencode_python.ai_session import AISession
 from opencode_python.core.models import Session
@@ -26,7 +26,9 @@ class UnitTestsReviewer(BaseReviewerAgent):
     - Determinism (randomness, time dependencies, state leakage)
     """
 
-    _SYSTEM_PROMPT = """You are the Unit Test Review Subagent.
+    def get_system_prompt(self) -> str:
+        """Return the system prompt for this reviewer agent."""
+        return f"""You are the Unit Test Review Subagent.
 
 Use this shared behavior:
 - Identify which changed files/diffs are relevant to unit tests.
@@ -58,17 +60,13 @@ Severity:
 - critical: behavior changed with no tests and moderate risk
 - blocking: high-risk change with no tests; broken/flaky tests introduced
 
-Output MUST be valid JSON only with agent="unit_tests" and the standard schema.
-Return JSON only.
-"""
+{get_review_output_schema()}
+
+Your agent name is "unit_tests"."""
 
     def get_agent_name(self) -> str:
         """Return the agent name."""
         return "unit_tests"
-
-    def get_system_prompt(self) -> str:
-        """Return the system prompt for this reviewer agent."""
-        return self._SYSTEM_PROMPT
 
     def get_relevant_file_patterns(self) -> List[str]:
         """Return file patterns this reviewer is relevant to."""
@@ -135,7 +133,9 @@ Please analyze the above changes for unit test quality and provide your review i
                 raise ValueError("Empty response from LLM")
 
             try:
-                output = ReviewOutput.model_validate_json(response_message.text)
+                from opencode_python.utils.json_parser import strip_json_code_blocks
+                cleaned_text = strip_json_code_blocks(response_message.text)
+                output = ReviewOutput.model_validate_json(cleaned_text)
             except pd.ValidationError as e:
                 return ReviewOutput(
                     agent=self.get_agent_name(),

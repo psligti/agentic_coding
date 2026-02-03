@@ -8,33 +8,12 @@ from opencode_python.agents.review.contracts import (
     ReviewOutput,
     Scope,
     MergeGate,
-    Finding,
+    get_review_output_schema,
 )
 from opencode_python.ai_session import AISession
 from opencode_python.core.models import Session
 from opencode_python.core.settings import settings
 import uuid
-
-
-_SYSTEM_PROMPT = """You are the Diff Scoper Subagent.
-
-Use this shared behavior:
-- If changed_files or diff are missing, request them.
-- Summarize change intent and classify risk.
-- Route attention to which other subagents matter most.
-- Propose minimal checks to run first.
-
-Goal:
-- Summarize what changed in 5–10 bullets.
-- Classify risk: low/medium/high.
-- Produce a routing table: which subagents are most relevant and why.
-- Propose the minimal set of checks to run first.
-
-Return JSON with agent="diff_scoper" using the standard schema.
-In merge_gate.notes_for_coding_agent include:
-- "routing": { "architecture": "...", "security": "...", ... }
-- "risk rationale"
-Return JSON only."""
 
 
 class DiffScoperReviewer(BaseReviewerAgent):
@@ -53,7 +32,29 @@ class DiffScoperReviewer(BaseReviewerAgent):
 
     def get_system_prompt(self) -> str:
         """Return the system prompt for this reviewer agent."""
-        return _SYSTEM_PROMPT
+        return f"""You are the Diff Scoper Subagent.
+
+Use this shared behavior:
+- If changed_files or diff are missing, request them.
+- Summarize change intent and classify risk.
+- Route attention to which other subagents matter most.
+- Propose minimal checks to run first.
+
+Goal:
+- Summarize what changed in 5-10 bullets.
+- Classify risk: low/medium/high.
+- Produce a routing table: which subagents are most relevant and why.
+- Propose minimal set of checks to run first.
+
+{get_review_output_schema()}
+
+Your agent name is "diff_scoper".
+
+IMPORTANT: In merge_gate.notes_for_coding_agent, include:
+- "routing": {{"architecture": "...", "security": "...", ...}}
+- "risk rationale"
+
+These are notes for the orchestrator, not blocking issues."""
 
     def get_relevant_file_patterns(self) -> List[str]:
         """Return file patterns this reviewer is relevant to.
@@ -125,7 +126,9 @@ Please analyze the above changes for diff scoping and provide your review in the
                 raise ValueError("Empty response from LLM")
 
             try:
-                output = ReviewOutput.model_validate_json(response_message.text)
+                from opencode_python.utils.json_parser import strip_json_code_blocks
+                cleaned_text = strip_json_code_blocks(response_message.text)
+                output = ReviewOutput.model_validate_json(cleaned_text)
             except pd.ValidationError as e:
                 return ReviewOutput(
                     agent=self.get_agent_name(),

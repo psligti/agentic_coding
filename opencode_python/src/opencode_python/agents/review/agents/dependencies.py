@@ -9,6 +9,7 @@ from opencode_python.agents.review.contracts import (
     ReviewOutput,
     Scope,
     MergeGate,
+    get_review_output_schema,
 )
 from opencode_python.ai_session import AISession
 from opencode_python.core.models import Session
@@ -16,7 +17,16 @@ from opencode_python.core.settings import settings
 import uuid
 
 
-DEPENDENCY_SYSTEM_PROMPT = """You are the Dependency & License Review Subagent.
+class DependencyLicenseReviewer(BaseReviewerAgent):
+    """Reviewer agent for dependency and license compliance."""
+
+    def get_agent_name(self) -> str:
+        """Return the agent name."""
+        return "dependencies"
+
+    def get_system_prompt(self) -> str:
+        """Return the system prompt for the dependency reviewer."""
+        return f"""You are the Dependency & License Review Subagent.
 
 Use this shared behavior:
 - If dependency changes are present but file contents are missing, request dependency files and lockfiles.
@@ -42,20 +52,9 @@ Severity:
 - critical if pins loosened causing non-repro builds
 - warning for safe bumps but missing notes
 
-Return JSON with agent="dependency_license" using the standard schema.
-Return JSON only."""
+{get_review_output_schema()}
 
-
-class DependencyLicenseReviewer(BaseReviewerAgent):
-    """Reviewer agent for dependency and license compliance."""
-
-    def get_agent_name(self) -> str:
-        """Return the agent name."""
-        return "dependencies"
-
-    def get_system_prompt(self) -> str:
-        """Return the system prompt for the dependency reviewer."""
-        return DEPENDENCY_SYSTEM_PROMPT
+Your agent name is "dependencies"."""
 
     def get_relevant_file_patterns(self) -> List[str]:
         """Return file patterns relevant to dependency review."""
@@ -144,7 +143,9 @@ Please analyze the above changes for dependency and license issues and provide y
                 raise ValueError("Empty response from LLM")
 
             try:
-                output = ReviewOutput.model_validate_json(response_message.text)
+                from opencode_python.utils.json_parser import strip_json_code_blocks
+                cleaned_text = strip_json_code_blocks(response_message.text)
+                output = ReviewOutput.model_validate_json(cleaned_text)
             except pd.ValidationError as e:
                 return ReviewOutput(
                     agent=self.get_agent_name(),

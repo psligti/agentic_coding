@@ -8,6 +8,7 @@ from opencode_python.agents.review.contracts import (
     ReviewOutput,
     Scope,
     MergeGate,
+    get_review_output_schema,
 )
 from opencode_python.ai_session import AISession
 from opencode_python.core.models import Session
@@ -15,7 +16,23 @@ from opencode_python.core.settings import settings
 import uuid
 
 
-LINTING_SYSTEM_PROMPT = """You are the Linting & Style Review Subagent.
+class LintingReviewer(BaseReviewerAgent):
+    """Reviewer agent for linting, formatting, and code quality checks.
+
+    This agent uses LLM-based analysis to detect:
+    - Formatting issues (indentation, line length)
+    - Lint adherence (PEP8 violations, style issues)
+    - Type hints coverage (missing type annotations)
+    - Code quality smells (unused imports, dead code)
+    """
+
+    def get_agent_name(self) -> str:
+        """Return the agent name."""
+        return "linting"
+
+    def get_system_prompt(self) -> str:
+        """Return the system prompt for this reviewer."""
+        return f"""You are the Linting & Style Review Subagent.
 
 Use this shared behavior:
 - Identify which changed files/diffs are relevant to lint/style.
@@ -45,27 +62,9 @@ Severity:
 - critical: new lint violations likely failing CI
 - blocking: syntax errors, obvious correctness issues, format prevents CI merge
 
-Output MUST be valid JSON only with agent="linting" and the standard schema.
-Return JSON only."""
+{get_review_output_schema()}
 
-
-class LintingReviewer(BaseReviewerAgent):
-    """Reviewer agent for linting, formatting, and code quality checks.
-
-    This agent uses LLM-based analysis to detect:
-    - Formatting issues (indentation, line length)
-    - Lint adherence (PEP8 violations, style issues)
-    - Type hints coverage (missing type annotations)
-    - Code quality smells (unused imports, dead code)
-    """
-
-    def get_agent_name(self) -> str:
-        """Return the agent name."""
-        return "linting"
-
-    def get_system_prompt(self) -> str:
-        """Return the system prompt for this reviewer."""
-        return LINTING_SYSTEM_PROMPT
+Your agent name is "linting"."""
 
     def get_relevant_file_patterns(self) -> List[str]:
         """Return file patterns this reviewer is relevant to."""
@@ -162,7 +161,9 @@ Please analyze the above changes for linting and style issues and provide your r
                 raise ValueError("Empty response from LLM")
 
             try:
-                output = ReviewOutput.model_validate_json(response_message.text)
+                from opencode_python.utils.json_parser import strip_json_code_blocks
+                cleaned_text = strip_json_code_blocks(response_message.text)
+                output = ReviewOutput.model_validate_json(cleaned_text)
             except pd.ValidationError as e:
                 return ReviewOutput(
                     agent=self.get_agent_name(),
