@@ -1,38 +1,103 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { useEffect, useState } from 'react'
+import { AppLayout } from './components/AppLayout'
+import { useSessions } from './hooks/useSessions'
+import { useCurrentSession } from './hooks/useCurrentSession'
+import { useAgents } from './hooks/useAgents'
+import { useTools } from './hooks/useTools'
+import { useSkills } from './hooks/useSkills'
+import { useModels } from './hooks/useModels'
+import { useAccounts } from './hooks/useAccounts'
+import { useMessages } from './hooks/useMessages'
+import { useSelectedAgent, useSelectedAccount, useSelectedModel, useSetSelectedAgent, useSetSelectedAccount, useSetSelectedModel } from './store'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { currentSession, setCurrent } = useCurrentSession()
+  const { sessions, fetchSessions, createSession } = useSessions()
+  const { fetchMessages } = useMessages()
+  const { agents, fetchAgents } = useAgents()
+  const { fetchTools } = useTools()
+  const { fetchSkills } = useSkills()
+  const { models, fetchModels } = useModels()
+  const { accounts, fetchAccounts } = useAccounts()
+  const selectedAgent = useSelectedAgent()
+  const selectedModel = useSelectedModel()
+  const selectedAccount = useSelectedAccount()
+  const setSelectedAgent = useSetSelectedAgent()
+  const setSelectedModel = useSetSelectedModel()
+  const setSelectedAccount = useSetSelectedAccount()
+  const [sessionsLoaded, setSessionsLoaded] = useState(false)
 
-  // Register global keyboard shortcuts
-  useKeyboardShortcuts()
+  useEffect(() => {
+    let isMounted = true
+
+    fetchSessions()
+      .then(() => {
+        if (isMounted) {
+          setSessionsLoaded(true)
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load sessions:', error)
+        if (isMounted) {
+          setSessionsLoaded(true)
+        }
+      })
+
+    fetchAgents().catch((error) => console.error('Failed to load agents:', error))
+    fetchTools().catch((error) => console.error('Failed to load tools:', error))
+    fetchSkills().catch((error) => console.error('Failed to load skills:', error))
+    fetchModels().catch((error) => console.error('Failed to load models:', error))
+    fetchAccounts().catch((error) => console.error('Failed to load accounts:', error))
+
+    return () => {
+      isMounted = false
+    }
+  }, [fetchAccounts, fetchAgents, fetchModels, fetchSessions, fetchSkills, fetchTools])
+
+  useEffect(() => {
+    if (!sessionsLoaded) return
+    if (currentSession) return
+
+    if (sessions.length === 0) {
+      createSession('Default Session')
+        .then((session) => {
+          setCurrent(session)
+        })
+        .catch((error) => console.error('Failed to create default session:', error))
+      return
+    }
+
+    setCurrent(sessions[0])
+  }, [createSession, currentSession, sessions, sessionsLoaded, setCurrent])
+
+  useEffect(() => {
+    if (!currentSession) return
+    fetchMessages(currentSession.id).catch((error) => console.error('Failed to load messages:', error))
+  }, [currentSession, fetchMessages])
+
+  useEffect(() => {
+    if (!selectedAgent && agents.length > 0) {
+      setSelectedAgent(agents[0].name)
+    }
+  }, [agents, selectedAgent, setSelectedAgent])
+
+  useEffect(() => {
+    if (!selectedModel && models.length > 0) {
+      const defaultModel = models.find((model) => model.is_default)?.model
+      setSelectedModel(defaultModel || models[0].model || null)
+    }
+  }, [models, selectedModel, setSelectedModel])
+
+  useEffect(() => {
+    if (!selectedAccount && accounts.length > 0) {
+      const defaultAccount = accounts.find((account) => account.is_default)?.name
+      setSelectedAccount(defaultAccount || accounts[0].name)
+    }
+  }, [accounts, selectedAccount, setSelectedAccount])
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <AppLayout />
   )
 }
 

@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
-import { useCurrentSession, useComposer, useAddMessage, useSetComposerDraft } from '../store'
+import { useCurrentSession, useComposer, useSetComposerDraft, useSetComposerSending } from '../store'
+import { useMessages } from '../hooks/useMessages'
 import './ComposerBar.css'
 
 const MAX_LINES = 10
-
 export function ComposerBar() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [currentHeight, setCurrentHeight] = useState<number | undefined>(undefined)
   const [localDraft, setLocalDraft] = useState('')
 
   // Hooks from store
-  const { currentSession } = useCurrentSession()
+  const currentSession = useCurrentSession()
   const { draft: storeDraft, isSending } = useComposer()
-  const addMessage = useAddMessage()
   const setComposerDraft = useSetComposerDraft()
+  const setComposerSending = useSetComposerSending()
+  const { createUserMessage } = useMessages()
 
   // Sync store draft to local state when it changes
   useEffect(() => {
@@ -53,27 +54,22 @@ export function ComposerBar() {
     // Ctrl+Enter to send
     if (e.ctrlKey && e.key === 'Enter') {
       e.preventDefault()
-      if (localDraft.trim() && !isSending) {
-        addMessage({
-          session_id: currentSession?.id || '',
-          role: 'user' as const,
-          text: localDraft,
-          parts: [],
-          timestamp: Date.now(),
-        })
-      }
+      if (!localDraft.trim() || isSending || !currentSession) return
+      void handleSend()
     }
   }
 
-  const handleSend = () => {
-    if (localDraft.trim() && !isSending) {
-      addMessage({
-        session_id: currentSession?.id || '',
-        role: 'user' as const,
-        text: localDraft,
-        parts: [],
-        timestamp: Date.now(),
-      })
+  const handleSend = async () => {
+    if (!localDraft.trim() || isSending || !currentSession) return
+    setComposerSending(true)
+    try {
+      await createUserMessage(currentSession.id, localDraft)
+      setComposerDraft('')
+      setLocalDraft('')
+    } catch (error) {
+      console.error('Failed to send message:', error)
+    } finally {
+      setComposerSending(false)
     }
   }
 
@@ -83,6 +79,7 @@ export function ComposerBar() {
     <div className="composer-bar">
       <textarea
         ref={textareaRef}
+        className="composer-bar__textarea"
         value={localDraft}
         onChange={handleChange}
         onKeyDown={handleKeyDown}

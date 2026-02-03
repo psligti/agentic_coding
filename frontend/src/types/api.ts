@@ -19,6 +19,51 @@ export interface ToolState {
   error?: string;
 }
 
+export interface AgentSummary {
+  name: string;
+  description: string;
+  mode: string;
+  native: boolean;
+  hidden: boolean;
+  model?: {
+    provider?: string;
+    model?: string;
+  } | null;
+  permission: Array<Record<string, unknown>>;
+}
+
+export interface ToolSummary {
+  id: string;
+  description: string;
+  category?: string | null;
+  tags?: string[] | null;
+}
+
+export interface SkillSummary {
+  name: string;
+  description: string;
+  location?: string;
+}
+
+export interface ModelSummary {
+  name: string | null;
+  provider_id: string | null;
+  model: string | null;
+  is_default: boolean;
+}
+
+export interface AccountSummary {
+  name: string;
+  config: {
+    provider_id?: string | null;
+    model?: string | null;
+    base_url?: string | null;
+    options?: Record<string, unknown>;
+    description?: string | null;
+  };
+  is_default: boolean;
+}
+
 /**
  * Message role type
  */

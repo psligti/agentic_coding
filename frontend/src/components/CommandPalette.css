@@ -1,0 +1,114 @@
+.command-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.command-palette {
+  width: min(900px, 92vw);
+  max-height: 70vh;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-normal);
+  border-radius: var(--r-panel);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.command-palette__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--pad-md);
+  border-bottom: 1px solid var(--border-normal);
+}
+
+.command-palette__title {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.command-palette__close {
+  background: transparent;
+  border: 1px solid var(--border-normal);
+  border-radius: var(--r-control);
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 16px;
+}
+
+.command-palette__close:hover {
+  background: var(--surface-raised);
+}
+
+.command-palette__input {
+  width: 100%;
+  padding: var(--pad-md);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-normal);
+  border-radius: var(--r-control);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+}
+
+.command-palette__input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px rgba(32, 197, 255, 0.2);
+}
+
+.command-palette__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--pad-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sm);
+}
+
+.command-palette__item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: var(--pad-md);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-normal);
+  border-radius: var(--r-control);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.command-palette__item:hover {
+  border-color: var(--border-focus);
+}
+
+.command-palette__item--selected {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px rgba(32, 197, 255, 0.2);
+}
+
+.command-palette__item-title {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.command-palette__item-keywords {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.command-palette__empty {
+  padding: var(--pad-md);
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 14px;
+}

@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 
+import type { Mock } from 'vitest'
+
 // Mock fetch
 global.fetch = vi.fn()
 
@@ -10,7 +12,7 @@ describe('useApiClient', () => {
 
   it('fetchApi handles 200 OK responses', async () => {
     const mockData = { id: 'test-1', title: 'Test Session' }
-    ;(global.fetch as vi.Mock).mockResolvedValueOnce({
+    ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockData,
     })
@@ -29,7 +31,7 @@ describe('useApiClient', () => {
   })
 
   it('fetchApi handles 404 errors', async () => {
-    ;(global.fetch as vi.Mock).mockResolvedValueOnce({
+    ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
       status: 404,
       json: async () => ({ message: 'Not found' }),
@@ -44,7 +46,7 @@ describe('useApiClient', () => {
   })
 
   it('fetchApi handles network errors', async () => {
-    ;(global.fetch as vi.Mock).mockRejectedValueOnce(new Error('Network error'))
+    ;(global.fetch as Mock).mockRejectedValueOnce(new Error('Network error'))
 
     await expect(
       import('./useApiClient').then((m) => m.fetchApi('/sessions'))
@@ -57,7 +59,7 @@ describe('useApiClient', () => {
   it('postApi makes POST requests', async () => {
     const mockData = { agent_name: 'plan', user_message: 'test' }
     const mockResponse = { id: 'session-1' }
-    ;(global.fetch as vi.Mock).mockResolvedValueOnce({
+    ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     })
@@ -78,7 +80,7 @@ describe('useApiClient', () => {
 
   it('getApi makes GET requests', async () => {
     const mockData = [{ id: 'session-1', title: 'Test' }]
-    ;(global.fetch as vi.Mock).mockResolvedValueOnce({
+    ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockData,
     })
@@ -93,7 +95,7 @@ describe('useApiClient', () => {
   })
 
   it('deleteApi makes DELETE requests', async () => {
-    ;(global.fetch as vi.Mock).mockResolvedValueOnce({
+    ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true }),
     })
@@ -108,7 +110,7 @@ describe('useApiClient', () => {
 
   it('putApi makes PUT requests', async () => {
     const mockData = { title: 'Updated' }
-    ;(global.fetch as vi.Mock).mockResolvedValueOnce({
+    ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true }),
     })

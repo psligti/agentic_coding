@@ -1,0 +1,10 @@
+.app-layout {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  gap: var(--gap-sm);
+  padding: var(--pad-md);
+  box-sizing: border-box;
+}

@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { useStore } from '../store'
 
@@ -24,7 +23,6 @@ export function useKeyboardShortcuts() {
     }
   }, {
     enableOnFormTags: ['INPUT', 'TEXTAREA', 'SELECT'],
-    enableOnHiddenElements: true,
   })
 
   // Ctrl+D: Toggle right drawer
@@ -36,7 +34,6 @@ export function useKeyboardShortcuts() {
     }
   }, {
     enableOnFormTags: ['INPUT', 'TEXTAREA', 'SELECT'],
-    enableOnHiddenElements: true,
   })
 
   // Esc: Close palette and drawer
@@ -48,7 +45,6 @@ export function useKeyboardShortcuts() {
     }
   }, {
     enableOnFormTags: ['INPUT', 'TEXTAREA', 'SELECT'],
-    enableOnHiddenElements: true,
   })
 
   // Ctrl+Enter: Don't trigger palette when open (pass-through to forms)
@@ -59,6 +55,5 @@ export function useKeyboardShortcuts() {
     }
   }, {
     enableOnFormTags: ['INPUT', 'TEXTAREA', 'SELECT'],
-    enableOnHiddenElements: true,
   })
 }

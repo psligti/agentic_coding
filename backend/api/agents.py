@@ -39,6 +39,37 @@ task_status: Dict[str, str] = {}
 router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 
 
+@router.get("/", response_model=list[Dict[str, Any]])
+async def list_agents() -> list[Dict[str, Any]]:
+    """List all available agents.
+
+    Returns:
+        List of agent summaries with metadata.
+    """
+    try:
+        from opencode_python.agents.builtin import get_all_agents
+
+        agents = get_all_agents()
+        return [
+            {
+                "name": agent.name,
+                "description": agent.description,
+                "mode": agent.mode,
+                "native": agent.native,
+                "hidden": agent.hidden,
+                "model": agent.model,
+                "permission": agent.permission,
+            }
+            for agent in agents
+            if not agent.hidden
+        ]
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list agents: {str(e)}",
+        )
+
+
 async def get_sdk_client() -> OpenCodeAsyncClient:
     """Get SDK client instance with shared storage.
 

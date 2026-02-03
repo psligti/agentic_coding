@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useCurrentSession as useCurrentSessionStore, useSetCurrentSession } from '../store'
-import type { Session } from '../types/api'
+import type { Session } from '../store'
 
 /**
  * Hook to manage current session state with localStorage persistence

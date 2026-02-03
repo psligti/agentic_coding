@@ -51,13 +51,17 @@ async def health_check() -> dict[str, str | bool]:
 
 
 # Include API routes
-from api import agents, health, messages, sessions, streaming
+from api import accounts, agents, health, messages, models, sessions, skills, streaming, tools
 
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(messages.router)
 app.include_router(sessions.router)
 app.include_router(agents.router)
 app.include_router(streaming.router)
+app.include_router(tools.router)
+app.include_router(skills.router)
+app.include_router(models.router)
+app.include_router(accounts.router)
 
 
 @app.get("/api/v1/info", tags=["api"])

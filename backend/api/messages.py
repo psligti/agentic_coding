@@ -7,8 +7,8 @@ import asyncio
 import uuid
 from datetime import datetime
 
-from opencode_python.sdk import OpenCodeAsyncClient
 from opencode_python.core.models import Message
+from api.sessions import get_sdk_client
 
 
 # Pydantic models for request/response
@@ -35,7 +35,7 @@ router = APIRouter(tags=["messages"])
 
 async def get_messages_from_session(session_id: str) -> List[MessageResponse]:
     """Get messages from a session using SDK."""
-    client = OpenCodeAsyncClient()
+    client = await get_sdk_client()
 
     # Verify session exists first
     session = await client.get_session(session_id)
@@ -124,7 +124,7 @@ async def add_message(
         HTTPException: If the session is not found (404) or message creation fails.
     """
     # Verify session exists first
-    client = OpenCodeAsyncClient()
+    client = await get_sdk_client()
     session = await client.get_session(session_id)
     if not session:
         raise HTTPException(

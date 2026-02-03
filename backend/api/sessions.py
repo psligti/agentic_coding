@@ -4,7 +4,7 @@ import os
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Body, HTTPException, status
 
@@ -19,6 +19,14 @@ class CreateSessionRequest(BaseModel):
 
     title: str
     version: str = "1.0.0"
+
+
+class ExecuteSessionRequest(BaseModel):
+    """Request model for executing an agent in a session."""
+
+    agent_name: str
+    user_message: str
+    options: Optional[Dict[str, Any]] = None
 
 
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
@@ -213,4 +221,46 @@ async def delete_session(session_id: str) -> Dict[str, Any]:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete session: {str(e)}",
+        )
+
+
+@router.post("/{session_id}/execute", response_model=Dict[str, Any])
+async def execute_session(session_id: str, request: ExecuteSessionRequest = Body(...)) -> Dict[str, Any]:
+    """Execute an agent within an existing session."""
+    if not request.user_message or not request.user_message.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User message is required",
+        )
+
+    try:
+        client = await get_sdk_client()
+        session = await client.get_session(session_id)
+        if session is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Session not found: {session_id}",
+            )
+
+        result = await client.execute_agent(
+            agent_name=request.agent_name,
+            session_id=session_id,
+            user_message=request.user_message,
+            options=request.options or {},
+        )
+
+        return {
+            "session_id": session_id,
+            "agent_name": result.agent_name,
+            "response": result.response,
+            "tools_used": result.tools_used,
+            "duration": result.duration,
+            "error": result.error,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to execute agent: {str(e)}",
         )

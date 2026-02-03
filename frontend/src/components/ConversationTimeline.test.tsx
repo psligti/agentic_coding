@@ -1,41 +1,50 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { ConversationTimeline } from './ConversationTimeline'
-import { Message } from '../types/api'
 
-describe('ConversationTimeline', () => {
-  it('should render without crashing (basic smoke test)', () => {
-    const mockMessages: Message[] = [
+vi.mock('../store', () => ({
+  useCurrentSession: () => ({
+    id: 'session-1',
+    title: 'Session 1',
+    time_created: 0,
+    time_updated: 0,
+    message_count: 1,
+  }),
+  useModelStatus: () => ({ name: 'Agent', connected: true }),
+  useMemoryUsage: () => ({ used: 0, total: 8 }),
+  useTokenUsage: () => ({ input: 0, output: 0, total: 0, limit: 0 }),
+  useMessagesState: () => ({
+    'session-1': [
       {
-        id: '1',
-        session_id: 'test-session',
+        id: 'msg-1',
+        session_id: 'session-1',
         role: 'user',
-        text: 'Test message',
+        text: 'Hello',
         parts: [],
         timestamp: Date.now(),
       },
-    ]
+    ],
+  }),
+  useSelectedAgent: () => 'build',
+  useSelectedModel: () => null,
+  useSelectedSkills: () => [],
+}))
 
-    // Mock useStore to return our messages
-    vi.stubGlobal('useStore', vi.fn(() => ({
-      messages: {
-        'test-session': mockMessages,
-      },
-    })))
+vi.mock('../hooks/useMessages', () => ({
+  useMessages: () => ({
+    fetchMessages: () => Promise.resolve(),
+  }),
+}))
 
-    expect(() => {
-      render(<ConversationTimeline sessionId="test-session" />)
-    }).not.toThrow()
-  })
+vi.mock('../hooks/useExecuteAgent', () => ({
+  useExecuteAgent: () => ({
+    execute: vi.fn(),
+    stop: vi.fn(),
+  }),
+}))
 
-  it('should render empty state when no messages', () => {
-    vi.stubGlobal('useStore', vi.fn(() => ({
-      messages: {},
-    })))
-
-    const { container } = render(<ConversationTimeline sessionId="test-session" />)
-
-    expect(container).toBeTruthy()
-    expect(container.textContent).toContain('No messages yet')
+describe('ConversationTimeline', () => {
+  it('renders messages for current session', () => {
+    render(<ConversationTimeline />)
+    expect(screen.getByText('Hello')).toBeInTheDocument()
   })
 })
