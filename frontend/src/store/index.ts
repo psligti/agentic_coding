@@ -8,6 +8,7 @@ export interface Session {
   time_created: number
   time_updated: number
   message_count: number
+  theme_id?: string
 }
 
 export interface Message {
@@ -209,6 +210,7 @@ const store = createStore<AppState>((set) => ({
   setSelectedAccount: (selectedAccount) => set({ selectedAccount }),
 }))
 
+export { store }
 export function useStore(): AppState
 export function useStore<T>(selector: (state: AppState) => T): T
 export function useStore<T>(selector?: (state: AppState) => T) {
@@ -219,6 +221,7 @@ export function useStore<T>(selector?: (state: AppState) => T) {
 export const useSessions = () => useStore((state) => state.sessions)
 export const useSetSessions = () => useStore((state) => state.setSessions)
 export const useCurrentSession = () => useStore((state) => state.currentSession)
+export const useCurrentSessionThemeId = () => useStore((state) => state.currentSession?.theme_id)
 export const useMessagesState = () => useStore((state) => state.messages)
 export const useTheme = () => useStore((state) => state.theme)
 export const usePalette = () => useStore((state) => state.paletteOpen)

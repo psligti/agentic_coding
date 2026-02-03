@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { useCurrentSession, useComposer, useSetComposerDraft, useSetComposerSending } from '../store'
+import { Send } from 'lucide-react'
+import { useCurrentSession, useComposer, useSetComposerDraft, useSetComposerSending, useAgentsState, useSelectedAgent, useSetSelectedAgent } from '../store'
 import { useMessages } from '../hooks/useMessages'
 import './ComposerBar.css'
 
-const MAX_LINES = 10
+const MAX_LINES = 13
 export function ComposerBar() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [currentHeight, setCurrentHeight] = useState<number | undefined>(undefined)
@@ -15,23 +16,21 @@ export function ComposerBar() {
   const setComposerDraft = useSetComposerDraft()
   const setComposerSending = useSetComposerSending()
   const { createUserMessage } = useMessages()
+  const agents = useAgentsState()
+  const selectedAgent = useSelectedAgent()
+  const setSelectedAgent = useSetSelectedAgent()
 
   // Sync store draft to local state when it changes
   useEffect(() => {
     setLocalDraft(storeDraft)
   }, [storeDraft])
 
-  // Auto-grow textarea on mount
   useEffect(() => {
     if (textareaRef.current && !currentHeight) {
-      // Auto-focus on mount
       textareaRef.current.focus()
 
-      // Calculate initial height
-      const lineHeight = 24 // CSS line-height
-      const maxHeight = lineHeight * MAX_LINES
-      const newHeight = Math.min(textareaRef.current.scrollHeight, maxHeight)
-      setCurrentHeight(newHeight)
+      const initialHeight = 48
+      setCurrentHeight(initialHeight)
     }
   }, [currentHeight])
 
@@ -42,20 +41,45 @@ export function ComposerBar() {
 
     const textarea = textareaRef.current
     if (textarea) {
-      // Calculate new height based on content
       const lineHeight = 24
       const maxHeight = lineHeight * MAX_LINES
-      const newHeight = Math.min(textarea.scrollHeight, maxHeight)
+      const scrollHeight = textarea.scrollHeight
+      const newHeight = Math.min(Math.max(scrollHeight, 48), maxHeight)
       setCurrentHeight(newHeight)
     }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Ctrl+Enter to send
-    if (e.ctrlKey && e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
       e.preventDefault()
       if (!localDraft.trim() || isSending || !currentSession) return
       void handleSend()
+    }
+    if (e.key === 'Enter' && e.ctrlKey && !e.shiftKey) {
+      e.preventDefault()
+      const textarea = textareaRef.current
+      if (textarea) {
+        const startPos = textarea.selectionStart
+        const endPos = textarea.selectionEnd
+        const newValue = localDraft.substring(0, startPos) + '\n' + localDraft.substring(endPos)
+        setLocalDraft(newValue)
+        setComposerDraft(newValue)
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = startPos + 1
+        }, 0)
+      }
+    }
+    if (e.key === 'Tab') {
+      e.preventDefault()
+      if (agents.length === 0) return
+
+      const currentIndex = selectedAgent
+        ? agents.findIndex((agent) => agent.name === selectedAgent)
+        : -1
+
+      const nextIndex = (currentIndex + 1) % agents.length
+      const nextAgent = agents[nextIndex]
+      setSelectedAgent(nextAgent.name)
     }
   }
 
@@ -66,6 +90,7 @@ export function ComposerBar() {
       await createUserMessage(currentSession.id, localDraft)
       setComposerDraft('')
       setLocalDraft('')
+      setCurrentHeight(48)
     } catch (error) {
       console.error('Failed to send message:', error)
     } finally {
@@ -77,28 +102,30 @@ export function ComposerBar() {
 
   return (
     <div className="composer-bar">
-      <textarea
-        ref={textareaRef}
-        className="composer-bar__textarea"
-        value={localDraft}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        placeholder="Start by typing..."
-        style={{
-          height: `${currentHeight}px`,
-          minHeight: '48px',
-          maxHeight: `${24 * MAX_LINES}px`,
-        }}
-        disabled={isSending}
-      />
-      <button
-        onClick={handleSend}
-        disabled={isDisabled}
-        className="composer-bar__send"
-        aria-label="Send message"
-      >
-        Send
-      </button>
+      <div className="composer-bar__input-wrapper">
+        <textarea
+          ref={textareaRef}
+          className="composer-bar__textarea"
+          value={localDraft}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          placeholder="Start by typing..."
+          style={{
+            height: `${currentHeight}px`,
+            minHeight: '48px',
+            maxHeight: `${24 * MAX_LINES}px`,
+          }}
+          disabled={isSending}
+        />
+        <button
+          onClick={handleSend}
+          disabled={isDisabled}
+          className="composer-bar__send"
+          aria-label="Send message"
+        >
+          <Send size={16} />
+        </button>
+      </div>
     </div>
   )
 }

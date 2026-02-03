@@ -1,10 +1,129 @@
 .app-layout {
   height: 100vh;
+  width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   background: var(--surface-base);
   color: var(--text-primary);
   gap: var(--gap-sm);
+  padding: var(--pad-sm);
+  overflow: hidden;
+}
+
+.topbar {
+  flex-shrink: 0;
+}
+
+.timeline-container {
+  flex-grow: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  position: relative;
+}
+
+.timeline-container::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(to bottom, transparent, var(--surface-base));
+  pointer-events: none;
+}
+
+.timeline-container::before {
+  content: '';
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(to top, transparent, var(--surface-base));
+  pointer-events: none;
+}
+
+/* Custom scrollbar styling for timeline */
+.timeline-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.timeline-container::-webkit-scrollbar-track {
+  background: var(--surface-raised);
+  border-radius: 4px;
+}
+
+.timeline-container::-webkit-scrollbar-thumb {
+  background: var(--border-normal);
+  border-radius: 4px;
+  border: 2px solid var(--surface-raised);
+}
+
+.timeline-container::-webkit-scrollbar-thumb:hover {
+  background: var(--border-focus);
+}
+
+.timeline-container::-webkit-scrollbar-thumb:active {
+  background: var(--border-focus);
+}
+
+/* Firefox scrollbar styling */
+.timeline-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-normal) var(--surface-raised);
+}
+
+.timeline-loading,
+.timeline-empty {
+  width: 100%;
+  max-width: 100%;
   padding: var(--pad-md);
-  box-sizing: border-box;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+/* Custom scrollbar styling for timeline */
+.timeline-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.timeline-container::-webkit-scrollbar-track {
+  background: var(--surface-raised);
+  border-radius: 4px;
+}
+
+.timeline-container::-webkit-scrollbar-thumb {
+  background: var(--border-normal);
+  border-radius: 4px;
+  border: 2px solid var(--surface-raised);
+}
+
+.timeline-container::-webkit-scrollbar-thumb:hover {
+  background: var(--border-focus);
+}
+
+.timeline-container::-webkit-scrollbar-thumb:active {
+  background: var(--border-focus);
+}
+
+/* Firefox scrollbar styling */
+.timeline-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-normal) var(--surface-raised);
+}
+
+.composer-bar {
+  flex-shrink: 0;
+}
+
+.statusbar {
+  flex-shrink: 0;
 }

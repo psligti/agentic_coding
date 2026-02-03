@@ -56,6 +56,12 @@ vi.mock('../store', () => ({
   useSetSelectedAgent: () => vi.fn(),
   useSetSelectedModel: () => vi.fn(),
   useSetSelectedAccount: () => vi.fn(),
+  useSetCurrentSession: () => vi.fn(),
+  useAgentsState: () => [],
+}))
+
+vi.mock('../hooks/useSessionThemeStream', () => ({
+  useSessionThemeStream: () => ({ connect: vi.fn(), disconnect: vi.fn() }),
 }))
 
 describe('App', () => {

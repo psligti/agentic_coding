@@ -20,12 +20,12 @@ Object.defineProperty(window, 'matchMedia', {
 // Helper function to render TestComponent with ThemeProvider
 function renderTestComponent() {
   function TestComponent() {
-    const { theme, toggleTheme, isDark } = useTheme();
+    const { mode, toggleMode, isDark } = useTheme();
     return (
       <div>
-        <span data-testid="theme">{theme}</span>
+        <span data-testid="mode">{mode}</span>
         <span data-testid="is-dark">{isDark ? 'true' : 'false'}</span>
-        <button data-testid="toggle" onClick={toggleTheme}>Toggle</button>
+        <button data-testid="toggle" onClick={toggleMode}>Toggle</button>
       </div>
     );
   }
@@ -39,96 +39,92 @@ function renderTestComponent() {
 
 describe('ThemeProvider', () => {
   beforeEach(() => {
-    // Clear any existing data-theme attribute
     document.documentElement.removeAttribute('data-theme');
-    // Clear localStorage
+    document.documentElement.classList.remove('dark');
     localStorage.clear();
   });
 
   afterEach(() => {
-    // Clean up after each test
     localStorage.clear();
     document.documentElement.removeAttribute('data-theme');
+    document.documentElement.classList.remove('dark');
   });
 
-  it('provides theme context to children', () => {
+  it('provides mode context to children', () => {
     renderTestComponent();
 
-    expect(screen.getByTestId('theme')).toHaveTextContent('dark');
+    expect(screen.getByTestId('mode')).toHaveTextContent('dark');
   });
 
-  it('toggles theme when toggleTheme is called', () => {
+  it('toggles mode when toggleMode is called', () => {
     renderTestComponent();
 
-    expect(screen.getByTestId('theme')).toHaveTextContent('dark');
+    expect(screen.getByTestId('mode')).toHaveTextContent('dark');
 
     fireEvent.click(screen.getByTestId('toggle'));
-    expect(screen.getByTestId('theme')).toHaveTextContent('light');
+    expect(screen.getByTestId('mode')).toHaveTextContent('light');
   });
 
-  it('provides theme state to context consumers', () => {
+  it('provides mode state to context consumers', () => {
     renderTestComponent();
 
-    expect(screen.getByTestId('theme')).toHaveTextContent('dark');
+    expect(screen.getByTestId('mode')).toHaveTextContent('dark');
     expect(screen.getByTestId('is-dark')).toHaveTextContent('true');
   });
 
-  it('toggles theme when toggleTheme is called', () => {
+  it('toggles mode when toggleMode is called', () => {
     const { unmount } = renderTestComponent();
 
-    expect(screen.getByTestId('theme')).toHaveTextContent('dark');
+    expect(screen.getByTestId('mode')).toHaveTextContent('dark');
 
     fireEvent.click(screen.getByTestId('toggle'));
-    expect(screen.getByTestId('theme')).toHaveTextContent('light');
+    expect(screen.getByTestId('mode')).toHaveTextContent('light');
     unmount();
   });
 
-  it('applies data-theme="dark" to document.documentElement by default', () => {
+  it('applies .dark class to document.documentElement by default', () => {
     render(
       <ThemeProvider>
         <div>Test</div>
       </ThemeProvider>
     );
 
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
   });
 
-  it('provides theme state to context consumers', () => {
-    const { unmount } = renderTestComponent();
+  it('removes .dark class when mode is light', () => {
+    renderTestComponent();
 
-    expect(screen.getByTestId('theme')).toHaveTextContent('dark');
-    expect(screen.getByTestId('is-dark')).toHaveTextContent('true');
-    unmount();
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    expect(screen.getByTestId('mode')).toHaveTextContent('dark');
+
+    fireEvent.click(screen.getByTestId('toggle'));
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    expect(screen.getByTestId('mode')).toHaveTextContent('light');
   });
 
-  it('applies data-theme="light" after toggle', () => {
+  it('applies data-theme="aurora" by default (when no session)', () => {
     render(
       <ThemeProvider>
         <div>Test</div>
       </ThemeProvider>
     );
 
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-
-    // Mock theme toggling by directly setting data-theme (since we can't easily test toggle without complex setup)
-    document.documentElement.setAttribute('data-theme', 'light');
-    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('aurora');
   });
 
-  it('resets data-theme on unmount', () => {
-    const { unmount } = render(
-      <ThemeProvider>
-        <div>Test</div>
-      </ThemeProvider>
-    );
+  it('preserves mode preference in localStorage', () => {
+    const { unmount } = renderTestComponent();
 
-    document.documentElement.setAttribute('data-theme', 'light');
-    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    fireEvent.click(screen.getByTestId('toggle'));
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    expect(localStorage.getItem('theme-mode')).toBe('light');
 
     unmount();
 
-    // Theme preference should be preserved (not reset to default)
-    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    renderTestComponent();
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    expect(screen.getByTestId('mode')).toHaveTextContent('light');
   });
 
   it('throws error when useTheme is used outside ThemeProvider', () => {

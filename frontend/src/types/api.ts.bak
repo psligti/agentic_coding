@@ -19,51 +19,6 @@ export interface ToolState {
   error?: string;
 }
 
-export interface AgentSummary {
-  name: string;
-  description: string;
-  mode: string;
-  native: boolean;
-  hidden: boolean;
-  model?: {
-    provider?: string;
-    model?: string;
-  } | null;
-  permission: Array<Record<string, unknown>>;
-}
-
-export interface ToolSummary {
-  id: string;
-  description: string;
-  category?: string | null;
-  tags?: string[] | null;
-}
-
-export interface SkillSummary {
-  name: string;
-  description: string;
-  location?: string;
-}
-
-export interface ModelSummary {
-  name: string | null;
-  provider_id: string | null;
-  model: string | null;
-  is_default: boolean;
-}
-
-export interface AccountSummary {
-  name: string;
-  config: {
-    provider_id?: string | null;
-    model?: string | null;
-    base_url?: string | null;
-    options?: Record<string, unknown>;
-    description?: string | null;
-  };
-  is_default: boolean;
-}
-
 /**
  * Message role type
  */
@@ -245,7 +200,7 @@ export interface MessageSummary {
 /**
  * Message model - container for parts
  */
-export interface Message {
+export type Message {
   id: string;
   session_id: string;
   role: MessageRole;
@@ -329,7 +284,6 @@ export interface Session {
   parent_id?: string;
   title: string;
   version: string;
-  theme_id?: string;
   summary?: MessageSummary;
   share?: SessionShare;
   permission?: Array<Record<string, unknown>>;
@@ -350,3 +304,6 @@ export interface ApiResponse<T> {
   data: T;
   error?: string;
 }
+
+// Test export
+export const TEST_MESSAGE = "test";

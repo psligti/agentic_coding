@@ -1,15 +1,18 @@
 .composer-bar {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--gap-sm);
-  padding: var(--pad-md);
   background: var(--surface-base);
-  border-top: 1px solid var(--border-normal);
   border-radius: var(--r-panel) var(--r-panel) 0 0;
 }
 
+.composer-bar__input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+
 .composer-bar__send {
-  flex-shrink: 0;
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
   padding: var(--pad-sm) var(--pad-md);
   font-size: 13px;
   font-weight: 500;
@@ -19,6 +22,7 @@
   border-radius: var(--r-pill);
   cursor: pointer;
   transition: all 0.2s ease;
+  z-index: 1;
 }
 
 .composer-bar__send:hover:not(:disabled) {
@@ -39,8 +43,8 @@
 
 /* Textarea styles */
 .composer-bar__textarea {
-  flex-grow: 1;
-  padding: var(--pad-sm) var(--pad-md);
+  width: 100%;
+  padding: var(--pad-sm) calc(var(--pad-md) + 60px) var(--pad-sm) var(--pad-md);
   font-size: 14px;
   line-height: 24px;
   font-family: inherit;
@@ -51,9 +55,8 @@
   resize: none;
   overflow: hidden;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, height 0.1s ease;
   min-height: 48px;
-  max-height: 240px; /* 24px * 10 lines */
 }
 
 .composer-bar__textarea::placeholder {

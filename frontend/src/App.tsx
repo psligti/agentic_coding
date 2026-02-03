@@ -8,6 +8,7 @@ import { useSkills } from './hooks/useSkills'
 import { useModels } from './hooks/useModels'
 import { useAccounts } from './hooks/useAccounts'
 import { useMessages } from './hooks/useMessages'
+import { useSessionThemeStream } from './hooks/useSessionThemeStream'
 import { useSelectedAgent, useSelectedAccount, useSelectedModel, useSetSelectedAgent, useSetSelectedAccount, useSetSelectedModel } from './store'
 import './App.css'
 
@@ -27,6 +28,8 @@ function App() {
   const setSelectedModel = useSetSelectedModel()
   const setSelectedAccount = useSetSelectedAccount()
   const [sessionsLoaded, setSessionsLoaded] = useState(false)
+
+  useSessionThemeStream({ sessionId: currentSession?.id || '' })
 
   useEffect(() => {
     let isMounted = true

@@ -1,5 +1,39 @@
-/* Import theme CSS variables */
+/* Import Tailwind CSS v4 */
+@import "tailwindcss";
+
+/* Import theme CSS variables first (must come before @theme) */
 @import './styles/themes.css';
+
+/* Enable class-based dark mode (using .dark class) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Map theme CSS variables to Tailwind v4 tokens */
+/* This allows using utilities like bg-surface-base, text-accent-primary, etc. */
+@theme inline {
+  /* Surfaces */
+  --color-surface-base: var(--surface-base);
+  --color-surface-panel: var(--surface-panel);
+  --color-surface-raised: var(--surface-raised);
+
+  /* Text */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+
+  /* Borders */
+  --color-border-normal: var(--border-normal);
+  --color-border-focus: var(--border-focus);
+
+  /* Accents */
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-secondary: var(--accent-secondary);
+
+  /* States */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+}
 
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -16,6 +50,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -27,8 +65,6 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
 }

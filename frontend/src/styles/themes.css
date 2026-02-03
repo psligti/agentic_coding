@@ -1,22 +1,38 @@
-/* Dark theme CSS variables matching PRD design tokens */
-[data-theme="dark"] {
+/* Theme Presets System
+ *
+ * Theme presets (aurora, ocean, ember) provide color palettes with both light and dark variants.
+ * To switch themes, set data-theme attribute on document.documentElement:
+ *   document.documentElement.setAttribute('data-theme', 'aurora')
+ *
+ * Dark mode is toggled via .dark class on document.documentElement:
+ *   document.documentElement.classList.add('dark')
+ *
+ * Unknown themeId values default to aurora theme.
+ */
+
+/* ========================================
+   Aurora Theme (Default)
+   Purple/indigo gradient theme with cool blues
+   ======================================== */
+
+[data-theme="aurora"] {
   /* Surfaces */
-  --surface-base: #0f172a;
-  --surface-panel: #0f172a;
-  --surface-raised: #111c33;
+  --surface-base: #e8eaf6;
+  --surface-panel: #ffffff;
+  --surface-raised: #ffffff;
 
   /* Text */
-  --text-primary: #e6e8ef;
-  --text-secondary: #a8b0c2;
-  --text-tertiary: #7b849c;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
 
   /* Borders */
-  --border-normal: #6366f1;
+  --border-normal: #d1d5db;
   --border-focus: #6366f1;
 
   /* Accents */
   --accent-primary: #6366f1;
-  --accent-secondary: #6366f1;
+  --accent-secondary: #818cf8;
 
   /* States */
   --success: #38d07a;
@@ -40,36 +56,225 @@
     "Liberation Mono", "Courier New", monospace;
 }
 
-[data-theme="light"] {
-  /* Light theme (future expansion) */
-  --surface-base: #ffffff;
-  --surface-panel: #f9fafb;
-  --surface-raised: #ffffff;
+[data-theme="aurora"].dark,
+.dark [data-theme="aurora"] {
+  /* Surfaces - Dark mode */
+  --surface-base: #0f172a;
+  --surface-panel: #1e1b4b;
+  --surface-raised: #111827;
 
-  --text-primary: #1f2937;
-  --text-secondary: #4b5563;
-  --text-tertiary: #6b7280;
+  /* Text - Dark mode */
+  --text-primary: #e6e8ef;
+  --text-secondary: #a8b0c2;
+  --text-tertiary: #7b849c;
 
-  --border-normal: #d1d5db;
-  --border-focus: #6366f1;
+  /* Borders - Dark mode */
+  --border-normal: #3730a3;
+  --border-focus: #818cf8;
 
-  --accent-primary: #6366f1;
+  /* Accents - Dark mode */
+  --accent-primary: #818cf8;
   --accent-secondary: #6366f1;
 
-  --success: #38d07a;
-  --warning: #f0c24b;
-  --error: #ff5c7a;
-  --info: #6366f1;
+  /* States - Dark mode */
+  --success: #34d399;
+  --warning: #fbbf24;
+  --error: #f87171;
+  --info: #818cf8;
+}
 
+/* ========================================
+   Ocean Theme
+   Teal/cyan color palette inspired by deep sea
+   ======================================== */
+
+[data-theme="ocean"] {
+  /* Surfaces */
+  --surface-base: #ecfdf5;
+  --surface-panel: #ffffff;
+  --surface-raised: #f0fdfa;
+
+  /* Text */
+  --text-primary: #134e4a;
+  --text-secondary: #0f766e;
+  --text-tertiary: #115e59;
+
+  /* Borders */
+  --border-normal: #99f6e4;
+  --border-focus: #14b8a6;
+
+  /* Accents */
+  --accent-primary: #14b8a6;
+  --accent-secondary: #2dd4bf;
+
+  /* States */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #0ea5e9;
+
+  /* Radii */
   --r-panel: 14px;
   --r-control: 14px;
   --r-pill: 999px;
 
+  /* Spacing */
   --pad-sm: 8px;
   --pad-md: 12px;
   --gap-sm: 8px;
   --gap-md: 12px;
 
+  /* Typography */
   --font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
+}
+
+[data-theme="ocean"].dark,
+.dark [data-theme="ocean"] {
+  /* Surfaces - Dark mode */
+  --surface-base: #022c22;
+  --surface-panel: #0f3d2f;
+  --surface-raised: #064e3b;
+
+  /* Text - Dark mode */
+  --text-primary: #d1fae5;
+  --text-secondary: #99f6e4;
+  --text-tertiary: #5eead4;
+
+  /* Borders - Dark mode */
+  --border-normal: #0d9488;
+  --border-focus: #2dd4bf;
+
+  /* Accents - Dark mode */
+  --accent-primary: #2dd4bf;
+  --accent-secondary: #14b8a6;
+
+  /* States - Dark mode */
+  --success: #34d399;
+  --warning: #fcd34d;
+  --error: #fca5a5;
+  --info: #38bdf8;
+}
+
+/* ========================================
+   Ember Theme
+   Warm amber/orange palette inspired by fire
+   ======================================== */
+
+[data-theme="ember"] {
+  /* Surfaces */
+  --surface-base: #fffbeb;
+  --surface-panel: #ffffff;
+  --surface-raised: #fef3c7;
+
+  /* Text */
+  --text-primary: #78350f;
+  --text-secondary: #92400e;
+  --text-tertiary: #a16207;
+
+  /* Borders */
+  --border-normal: #fcd34d;
+  --border-focus: #f59e0b;
+
+  /* Accents */
+  --accent-primary: #f59e0b;
+  --accent-secondary: #fbbf24;
+
+  /* States */
+  --success: #10b981;
+  --warning: #f97316;
+  --error: #ef4444;
+  --info: #3b82f6;
+
+  /* Radii */
+  --r-panel: 14px;
+  --r-control: 14px;
+  --r-pill: 999px;
+
+  /* Spacing */
+  --pad-sm: 8px;
+  --pad-md: 12px;
+  --gap-sm: 8px;
+  --gap-md: 12px;
+
+  /* Typography */
+  --font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}
+
+[data-theme="ember"].dark,
+.dark [data-theme="ember"] {
+  /* Surfaces - Dark mode */
+  --surface-base: #1c1917;
+  --surface-panel: #292524;
+  --surface-raised: #2a2624;
+
+  /* Text - Dark mode */
+  --text-primary: #fef3c7;
+  --text-secondary: #fde68a;
+  --text-tertiary: #fcd34d;
+
+  /* Borders - Dark mode */
+  --border-normal: #d97706;
+  --border-focus: #fbbf24;
+
+  /* Accents - Dark mode */
+  --accent-primary: #fbbf24;
+  --accent-secondary: #f59e0b;
+
+  /* States - Dark mode */
+  --success: #34d399;
+  --warning: #fb923c;
+  --error: #fca5a5;
+  --info: #60a5fa;
+}
+
+/* ========================================
+   Fallback: Default to Aurora if unknown theme
+   ======================================== */
+
+:root:not([data-theme="aurora"]):not([data-theme="ocean"]):not([data-theme="ember"]) {
+  /* Apply aurora theme as default for any unknown/unset theme */
+  --surface-base: #e8eaf6;
+  --surface-panel: #ffffff;
+  --surface-raised: #ffffff;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+  --border-normal: #d1d5db;
+  --border-focus: #6366f1;
+  --accent-primary: #6366f1;
+  --accent-secondary: #818cf8;
+  --success: #38d07a;
+  --warning: #f0c24b;
+  --error: #ff5c7a;
+  --info: #6366f1;
+  --r-panel: 14px;
+  --r-control: 14px;
+  --r-pill: 999px;
+  --pad-sm: 8px;
+  --pad-md: 12px;
+  --gap-sm: 8px;
+  --gap-md: 12px;
+  --font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}
+
+/* Fallback dark mode */
+:root:not([data-theme="aurora"]):not([data-theme="ocean"]):not([data-theme="ember"]).dark,
+.dark :root:not([data-theme="aurora"]):not([data-theme="ocean"]):not([data-theme="ember"]) {
+  --surface-base: #0f172a;
+  --surface-panel: #1e1b4b;
+  --surface-raised: #111827;
+  --text-primary: #e6e8ef;
+  --text-secondary: #a8b0c2;
+  --text-tertiary: #7b849c;
+  --border-normal: #3730a3;
+  --border-focus: #818cf8;
+  --accent-primary: #818cf8;
+  --accent-secondary: #6366f1;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --error: #f87171;
+  --info: #818cf8;
 }

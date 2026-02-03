@@ -1,16 +1,11 @@
 {
-  "active_plan": "/Users/parkersligting/develop/pt/agentic_coding/.worktrees/webapp/.sisyphus/plans/react-web-app.md",
-  "started_at": "2026-02-02T17:52:34.167Z",
+  "active_plan": "/Users/parkersligting/develop/pt/agentic_coding/.worktrees/webapp/.sisyphus/plans/tailwind-multitheme-migration.md",
+  "started_at": "2026-02-03T18:58:01.797Z",
   "session_ids": [
-    "ses_3e0a6f5f6ffeS2cTodD8muh55e",
-    "ses_3e0758b1affeFE5mVucjrwjG3x",
-    "ses_3e0758b16ffefxF1z16NQR6QhU",
-    "ses_3e07575fcffe719ry0scgbu7sK",
-    "ses_3e07575fbffeo9bc3xQe0Ov94t",
-    "ses_3dedbd3c8ffeajIJ0Hao4AA9G8",
-    "ses_3e0a6f5f6ffeS2cTodD8muh55e"
+    "ses_3db432a86ffekPNnQVBePoaVdg",
+    "ses_3db432a86ffekPNnQVBePoaVdg",
+    "ses_3dadde7bfffeJ5SCWYSDBx9Foc",
+    "ses_3daad11c4ffeoNYkApvYc6rmwz"
   ],
-  "plan_name": "react-web-app",
-  "completed_at": "2026-02-02T20:29:00Z",
-  "status": "complete"
+  "plan_name": "tailwind-multitheme-migration"
 }

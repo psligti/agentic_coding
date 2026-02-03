@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import {
   useAccountsState,
   useAgentsState,
@@ -21,6 +23,7 @@ import {
 } from '../store'
 import { useSessions } from '../hooks/useSessions'
 import { useAccounts } from '../hooks/useAccounts'
+import ThemePicker from './ThemePicker'
 import './RightDrawer.css'
 
 type DrawerTab = 'sessions' | 'agents' | 'models' | 'skills' | 'tools' | 'accounts' | 'settings' | 'info'
@@ -136,7 +139,7 @@ function AgentsTab({ onClose }: AgentsTabProps) {
   const setSelectedAgent = useSetSelectedAgent()
 
   return (
-    <div className="drawer__list">
+    <div className="drawer__list" role="listbox" aria-label="Agents">
       <div className="legend">
         <span className="legend__title">Agents</span>
         <span className="legend__right">
@@ -148,14 +151,19 @@ function AgentsTab({ onClose }: AgentsTabProps) {
       {agents.length === 0 ? (
         <div className="chip">No agents available</div>
       ) : (
-        agents.map((agent) => (
+        agents.map((agent, index) => (
           <button
             key={agent.name}
             className={`control drawer__item ${selectedAgent === agent.name ? 'is-active' : ''}`}
             onClick={() => setSelectedAgent(agent.name)}
+            role="option"
+            aria-selected={selectedAgent === agent.name}
+            data-agent-index={index}
           >
             <div className="drawer__item-title">{agent.name}</div>
-            <div className="drawer__item-meta">{agent.description}</div>
+            <div className="drawer__item-meta">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{agent.description}</ReactMarkdown>
+            </div>
           </button>
         ))
       )}
@@ -233,7 +241,9 @@ function SkillsTab({ onClose }: SkillsTabProps) {
             />
             <div>
               <div className="drawer__item-title">{skill.name}</div>
-              <div className="drawer__item-meta">{skill.description}</div>
+              <div className="drawer__item-meta">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{skill.description}</ReactMarkdown>
+              </div>
             </div>
           </label>
         ))
@@ -261,7 +271,9 @@ function ToolsTab({ onClose }: ToolsTabProps) {
         tools.map((tool) => (
           <div key={tool.id} className="drawer__item drawer__item--stack">
             <div className="drawer__item-title">{tool.id}</div>
-            <div className="drawer__item-meta">{tool.description}</div>
+            <div className="drawer__item-meta">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{tool.description}</ReactMarkdown>
+            </div>
           </div>
         ))
       )}
@@ -398,10 +410,11 @@ function SettingsTab({ onClose }: SettingsTabProps) {
           </button>
         </span>
       </div>
-      <div className="chip">Theme: {theme === 'dark' ? 'Dark' : 'Light'}</div>
+      <div className="chip">Mode: {theme === 'dark' ? 'Dark' : 'Light'}</div>
       <button className="control drawer__item" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-        Toggle Theme
+        Toggle Mode
       </button>
+      <ThemePicker />
     </div>
   )
 }
@@ -441,6 +454,9 @@ export default function RightDrawer() {
   const drawerTab = useStore((state) => state.drawerTab) as DrawerTab
   const setDrawerTab = useSetDrawerTab()
   const setDrawerOpen = useSetDrawerOpen()
+  const agents = useAgentsState()
+  const selectedAgent = useSelectedAgent()
+  const setSelectedAgent = useSetSelectedAgent()
 
   // Handle keyboard navigation (Left/Right arrows)
   useEffect(() => {
@@ -462,12 +478,18 @@ export default function RightDrawer() {
       } else if (e.key === 'Escape') {
         e.preventDefault()
         setDrawerOpen(false)
+      } else if (e.key === 'Tab' && drawerTab === 'agents') {
+        e.preventDefault()
+        if (agents.length === 0) return
+        const currentIndex = agents.findIndex((agent) => agent.name === selectedAgent)
+        const nextIndex = (currentIndex + 1) % agents.length
+        setSelectedAgent(agents[nextIndex].name)
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [drawerOpen, drawerTab, setDrawerTab, setDrawerOpen])
+  }, [drawerOpen, drawerTab, setDrawerTab, setDrawerOpen, agents, selectedAgent, setSelectedAgent])
 
   // Handle click outside to close
   const handleOverlayClick = (e: React.MouseEvent) => {

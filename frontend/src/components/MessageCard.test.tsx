@@ -44,7 +44,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const card = screen.getByText('Hello, how can I help?')
       expect(card).toBeInTheDocument()
@@ -60,7 +60,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const icon = screen.getByTestId('user-icon')
       expect(icon).toBeInTheDocument()
@@ -76,7 +76,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const copyButton = screen.getByRole('button', { name: /copy/i })
       expect(copyButton).toBeInTheDocument()
@@ -94,7 +94,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const card = screen.getByText('I can help with that!')
       expect(card).toBeInTheDocument()
@@ -110,7 +110,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const icon = screen.getByTestId('bot-icon')
       expect(icon).toBeInTheDocument()
@@ -128,7 +128,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const card = screen.getByText('Session started')
       expect(card).toBeInTheDocument()
@@ -144,7 +144,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const icon = screen.getByTestId('info-icon')
       expect(icon).toBeInTheDocument()
@@ -162,7 +162,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const card = screen.getByText('Tool executed: grep')
       expect(card).toBeInTheDocument()
@@ -178,7 +178,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const icon = screen.getByTestId('tool-icon')
       expect(icon).toBeInTheDocument()
@@ -196,7 +196,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const card = screen.getByText('What files need to be changed?')
       expect(card).toBeInTheDocument()
@@ -212,7 +212,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const icon = screen.getByTestId('question-icon')
       expect(icon).toBeInTheDocument()
@@ -230,7 +230,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const card = screen.getByText('Analyzing...')
       expect(card).toBeInTheDocument()
@@ -246,7 +246,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const icon = screen.getByTestId('sparkles-icon')
       expect(icon).toBeInTheDocument()
@@ -264,7 +264,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const card = screen.getByText('Failed to execute')
       expect(card).toBeInTheDocument()
@@ -280,7 +280,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const icon = screen.getByTestId('error-icon')
       expect(icon).toBeInTheDocument()
@@ -298,7 +298,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const text = screen.getByText('Text content')
       expect(text).toBeInTheDocument()
@@ -314,7 +314,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       // Verify card is rendered with markdown content
       expect(screen.getByText('Assistant')).toBeInTheDocument()
@@ -330,7 +330,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       expect(screen.getByText('Just text')).toBeInTheDocument()
     })
@@ -347,7 +347,7 @@ describe('MessageCard', () => {
         timestamp: Date.now(),
       }
 
-      render(<MessageCard message={message} />)
+      render(<MessageCard messages={[message]} role={message.role} />)
 
       const copyButton = screen.getByRole('button', { name: /copy/i })
       expect(copyButton).toBeInTheDocument()
@@ -364,7 +364,7 @@ describe('MessageCard', () => {
       }
 
       const testFn = vi.fn()
-      render(<MessageCard message={message} onQuote={testFn} />)
+      render(<MessageCard messages={[message]} role={message.role} onQuote={testFn} />)
 
       // Verify quote button exists
       const quoteButton = screen.getByRole('button', { name: /quote/i })
@@ -386,7 +386,7 @@ describe('MessageCard', () => {
       }
 
       const testFn = vi.fn()
-      render(<MessageCard message={message} onEdit={testFn} />)
+      render(<MessageCard messages={[message]} role={message.role} onEdit={testFn} />)
 
       const editButton = screen.getByRole('button', { name: /edit/i })
       expect(editButton).toBeInTheDocument()
