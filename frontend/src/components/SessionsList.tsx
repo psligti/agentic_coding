@@ -1,5 +1,4 @@
 import { useSessions } from '../store'
-import './SessionsList.css'
 
 interface SessionsListProps {
   onSelectSession?: (sessionId: string) => void
@@ -17,23 +16,23 @@ export function SessionsList({ onSelectSession }: SessionsListProps) {
   }
 
   return (
-    <div className="sessions-list">
+    <div>
       {sessions.length === 0 ? (
-        <div className="sessions-list__empty">No sessions yet</div>
+        <div className="text-tertiary font-mono text-sm text-center p-3 opacity-70">No sessions yet</div>
       ) : (
-        <div className="sessions-list__items">
+        <div className="flex flex-col gap-2">
           {sessions.map((session) => (
             <button
               key={session.id}
-              className="sessions-list__item"
+              className="bg-surface-raised border border-normal rounded-[14px] text-primary cursor-pointer font-mono p-3 text-left transition-all duration-150 w-full hover:bg-surface-base hover:border-focus focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2"
               onClick={() => onSelectSession?.(session.id)}
               data-testid={`session-${session.id}`}
             >
-              <div className="sessions-list__item-title">{session.title}</div>
-              <div className="sessions-list__item-meta">
-                <span className="sessions-list__item-date">{formatDate(session.time_created)}</span>
-                <span className="sessions-list__item-time">{formatTime(session.time_created)}</span>
-                <span className="sessions-list__item-messages">{session.message_count} messages</span>
+              <div className="text-sm font-medium mb-2 overflow-hidden text-ellipsis whitespace-nowrap">{session.title}</div>
+              <div className="flex items-center gap-3 text-secondary text-xs">
+                <span className="opacity-80">{formatDate(session.time_created)}</span>
+                <span className="opacity-80">{formatTime(session.time_created)}</span>
+                <span className="opacity-80">{session.message_count} messages</span>
               </div>
             </button>
           ))}
