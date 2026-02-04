@@ -10,7 +10,6 @@ import { useAccounts } from './hooks/useAccounts'
 import { useMessages } from './hooks/useMessages'
 import { useSessionThemeStream } from './hooks/useSessionThemeStream'
 import { useSelectedAgent, useSelectedAccount, useSelectedModel, useSetSelectedAgent, useSetSelectedAccount, useSetSelectedModel } from './store'
-import './App.css'
 
 function App() {
   const { currentSession, setCurrent } = useCurrentSession()

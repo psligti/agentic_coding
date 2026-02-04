@@ -1447,3 +1447,40 @@ cd frontend && npm run build  # ✓ Built successfully (exits 0)
 **CSS Bundle Size:** 30.57 kB (up from 27.94 kB)
 
 ---
+## Task 10.1: Migrate App.tsx + App.css to Tailwind
+
+### Migration Summary
+- **Files Modified**:
+  - `frontend/src/App.tsx`: Removed CSS import on line 13
+  - `frontend/src/index.css`: Added #root styling for layout constraint
+- **Files Deleted**:
+  - `frontend/src/App.css`: Entire file removed (unused legacy code + #root constraint)
+
+### Key Findings
+
+1. **App.css Content**:
+   - `#root` styling: `max-width: 1280px; width: 100%; margin: 0 auto;` - Used for layout constraint
+   - Legacy unused CSS: `.logo`, `.card`, `.read-the-docs`, animations - Not used in codebase
+
+2. **Layout Architecture**:
+   - `#root` provides max-width constraint (1280px) and centering for entire app
+   - `AppLayout` uses `width: 100%; max-width: 100%;` to fill parent container
+   - AppLayout handles its own styling with `AppLayout.css`
+
+3. **Migration Strategy**:
+   - Preserved #root styling in `index.css` using standard CSS (not Tailwind utilities)
+   - Rationale: Layout constraints are better expressed as CSS rules for clarity
+   - This maintains backward compatibility with existing layout behavior
+
+### Verification
+- ✅ Build passes: `npm run build`
+- ✅ App component tests pass: `npm test src/__tests__/App.test.tsx`
+- ✅ No TypeScript errors on App.tsx
+- ⚠️ Pre-existing linting errors (unrelated to this task)
+- ⚠️ Pre-existing test failures in TopBar.test.tsx (unrelated to this task)
+
+### Lessons Learned
+- Check component hierarchy before deleting CSS - AppLayout handles its own styling
+- Preserving layout constraints (like max-width) is critical for visual consistency
+- Standard CSS is fine for global layout rules even in Tailwind projects
+- Build validation is critical - confirms no import errors after CSS file removal
