@@ -24,7 +24,7 @@ import {
 import { useSessions } from '../hooks/useSessions'
 import { useAccounts } from '../hooks/useAccounts'
 import ThemePicker from './ThemePicker'
-import './RightDrawer.css'
+
 
 type DrawerTab = 'sessions' | 'agents' | 'models' | 'skills' | 'tools' | 'accounts' | 'settings' | 'info'
 
@@ -92,31 +92,31 @@ function SessionsTab({ onClose }: SessionsTabProps) {
   }
 
   return (
-    <div className="drawer__list">
-      <div className="legend">
-        <span className="legend__title">Sessions</span>
-        <span className="legend__right">
-          <button className="control chip" onClick={handleCreate} disabled={creating}>
+    <div className="p-2 flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-secondary uppercase tracking-widest">Sessions</span>
+        <span className="absolute right-2 bottom-2">
+          <button className="inline-flex items-center gap-2 border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10 text-xs text-primary bg-accent-primary" onClick={handleCreate} disabled={creating}>
             New
           </button>
-          <button className="control chip" onClick={onClose} title="Close drawer (Esc)">
+          <button className="inline-flex items-center gap-2 border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10 text-xs text-primary bg-accent-primary absolute right-2 bottom-2" onClick={onClose} title="Close drawer (Esc)">
             ×
           </button>
         </span>
       </div>
       {sessions.length === 0 ? (
-        <div className="chip">No sessions yet</div>
+        <div className="text-xs text-primary bg-accent-primary border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10">No sessions yet</div>
       ) : (
         sessions.map((session) => (
-          <div key={session.id} className={`drawer__item drawer__item--row ${currentSession?.id === session.id ? 'is-active' : ''}`}>
+          <div key={session.id} className={`w-full text-left bg-transparent border border-transparent rounded-[14px] text-primary font-mono text-[13px] cursor-pointer transition-all duration-150 ease-in-out flex items-center gap-2 p-0 hover:bg-[rgba(99,102,241,0.05)] hover:border-normal focus-visible:outline-2 focus-visible:outline-focus focus-visible:-outline-offset-2 ${currentSession?.id === session.id ? 'border-accent-primary bg-[rgba(99,102,241,0.08)]' : ''}`}>
             <button
-              className="drawer__item-main"
+              className="flex-1 text-left px-3 bg-transparent border-transparent text-primary font-mono cursor-pointer"
               onClick={() => setCurrentSession(session)}
             >
-              <span className="drawer__item-title">{session.title}</span>
+              <span className="font-medium text-[13px]">{session.title}</span>
             </button>
             <button
-              className="drawer__item-action"
+              className="mr-2 px-[6px_10px] border border-normal border-transparent text-secondary text-xs cursor-pointer transition-all duration-150 ease-in-out hover:text-primary hover:border-accent-primary"
               onClick={() => handleDelete(session.id)}
               title="Delete session"
             >
@@ -139,29 +139,29 @@ function AgentsTab({ onClose }: AgentsTabProps) {
   const setSelectedAgent = useSetSelectedAgent()
 
   return (
-    <div className="drawer__list" role="listbox" aria-label="Agents">
-      <div className="legend">
-        <span className="legend__title">Agents</span>
-        <span className="legend__right">
-          <button className="control chip" onClick={onClose} title="Close drawer (Esc)">
+    <div className="p-2 flex flex-col gap-2" role="listbox" aria-label="Agents">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-secondary uppercase tracking-widest">Agents</span>
+        <span className="absolute right-2 bottom-2">
+          <button className="inline-flex items-center gap-2 border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10 text-xs text-primary bg-accent-primary" onClick={onClose} title="Close drawer (Esc)">
             ×
           </button>
         </span>
       </div>
       {agents.length === 0 ? (
-        <div className="chip">No agents available</div>
+        <div className="text-xs text-primary bg-accent-primary border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10">No agents available</div>
       ) : (
         agents.map((agent, index) => (
           <button
             key={agent.name}
-            className={`control drawer__item ${selectedAgent === agent.name ? 'is-active' : ''}`}
+            className={`w-full text-left px-3 bg-transparent border border-transparent rounded-[14px] text-primary font-mono text-[13px] cursor-pointer transition-all duration-150 ease-in-out hover:bg-[rgba(99,102,241,0.05)] hover:border-normal focus-visible:outline-2 focus-visible:outline-focus focus-visible:-outline-offset-2 ${selectedAgent === agent.name ? 'border-accent-primary bg-[rgba(99,102,241,0.08)]' : ''}`}
             onClick={() => setSelectedAgent(agent.name)}
             role="option"
             aria-selected={selectedAgent === agent.name}
             data-agent-index={index}
           >
-            <div className="drawer__item-title">{agent.name}</div>
-            <div className="drawer__item-meta">
+            <div className="font-medium text-[13px]">{agent.name}</div>
+            <div className="text-xs text-secondary mt-0.5">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{agent.description}</ReactMarkdown>
             </div>
           </button>
@@ -177,26 +177,26 @@ function ModelsTab({ onClose }: ModelsTabProps) {
   const setSelectedModel = useSetSelectedModel()
 
   return (
-    <div className="drawer__list">
-      <div className="legend">
-        <span className="legend__title">Models</span>
-        <span className="legend__right">
-          <button className="control chip" onClick={onClose} title="Close drawer (Esc)">
+    <div className="p-2 flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-secondary uppercase tracking-widest">Models</span>
+        <span className="absolute right-2 bottom-2">
+          <button className="inline-flex items-center gap-2 border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10 text-xs text-primary bg-accent-primary" onClick={onClose} title="Close drawer (Esc)">
             ×
           </button>
         </span>
       </div>
       {models.length === 0 ? (
-        <div className="chip">No models configured</div>
+        <div className="text-xs text-primary bg-accent-primary border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10">No models configured</div>
       ) : (
         models.map((model) => (
           <button
             key={`${model.name}-${model.model}`}
-            className={`control drawer__item ${selectedModel === model.model ? 'is-active' : ''}`}
+            className={`w-full text-left px-3 bg-transparent border border-transparent rounded-[14px] text-primary font-mono text-[13px] cursor-pointer transition-all duration-150 ease-in-out hover:bg-[rgba(99,102,241,0.05)] hover:border-normal focus-visible:outline-2 focus-visible:outline-focus focus-visible:-outline-offset-2 ${selectedModel === model.model ? 'border-accent-primary bg-[rgba(99,102,241,0.08)]' : ''}`}
             onClick={() => setSelectedModel(model.model || null)}
           >
-            <div className="drawer__item-title">{model.model || 'Unknown model'}</div>
-            <div className="drawer__item-meta">
+            <div className="font-medium text-[13px]">{model.model || 'Unknown model'}</div>
+            <div className="text-xs text-secondary mt-0.5">
               {model.provider_id || 'Unknown provider'}{model.is_default ? ' • Default' : ''}
             </div>
           </button>
@@ -220,28 +220,29 @@ function SkillsTab({ onClose }: SkillsTabProps) {
   }
 
   return (
-    <div className="drawer__list">
-      <div className="legend">
-        <span className="legend__title">Skills</span>
-        <span className="legend__right">
-          <button className="control chip" onClick={onClose} title="Close drawer (Esc)">
+    <div className="p-2 flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-secondary uppercase tracking-widest">Skills</span>
+        <span className="absolute right-2 bottom-2">
+          <button className="inline-flex items-center gap-2 border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10 text-xs text-primary bg-accent-primary" onClick={onClose} title="Close drawer (Esc)">
             ×
           </button>
         </span>
       </div>
       {skills.length === 0 ? (
-        <div className="chip">No skills found</div>
+        <div className="text-xs text-primary bg-accent-primary border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10">No skills found</div>
       ) : (
         skills.map((skill) => (
-          <label key={skill.name} className="drawer__item drawer__item--check">
+          <label key={skill.name} className="flex items-start gap-2 p-3 border border-normal rounded-[14px] bg-transparent cursor-pointer">
             <input
               type="checkbox"
               checked={selectedSkills.includes(skill.name)}
               onChange={() => toggleSkill(skill.name)}
+              className="mt-0.5"
             />
             <div>
-              <div className="drawer__item-title">{skill.name}</div>
-              <div className="drawer__item-meta">
+              <div className="font-medium text-[13px]">{skill.name}</div>
+              <div className="text-xs text-secondary mt-0.5">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{skill.description}</ReactMarkdown>
               </div>
             </div>
@@ -256,22 +257,22 @@ function ToolsTab({ onClose }: ToolsTabProps) {
   const tools = useToolsState()
 
   return (
-    <div className="drawer__list">
-      <div className="legend">
-        <span className="legend__title">Tools</span>
-        <span className="legend__right">
-          <button className="control chip" onClick={onClose} title="Close drawer (Esc)">
+    <div className="p-2 flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-secondary uppercase tracking-widest">Tools</span>
+        <span className="absolute right-2 bottom-2">
+          <button className="inline-flex items-center gap-2 border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10 text-xs text-primary bg-accent-primary" onClick={onClose} title="Close drawer (Esc)">
             ×
           </button>
         </span>
       </div>
       {tools.length === 0 ? (
-        <div className="chip">No tools available</div>
+        <div className="text-xs text-primary bg-accent-primary border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10">No tools available</div>
       ) : (
         tools.map((tool) => (
-          <div key={tool.id} className="drawer__item drawer__item--stack">
-            <div className="drawer__item-title">{tool.id}</div>
-            <div className="drawer__item-meta">
+          <div key={tool.id} className="flex flex-col gap-[4px]">
+            <div className="font-medium text-[13px]">{tool.id}</div>
+            <div className="text-xs text-secondary mt-0.5">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{tool.description}</ReactMarkdown>
             </div>
           </div>
@@ -315,39 +316,39 @@ function AccountsTab({ onClose }: AccountsTabProps) {
   }
 
   return (
-    <div className="drawer__list">
-      <div className="legend">
-        <span className="legend__title">Accounts</span>
-        <span className="legend__right">
-          <button className="control chip" onClick={onClose} title="Close drawer (Esc)">
+    <div className="p-2 flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-secondary uppercase tracking-widest">Accounts</span>
+        <span className="absolute right-2 bottom-2">
+          <button className="inline-flex items-center gap-2 border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10 text-xs text-primary bg-accent-primary" onClick={onClose} title="Close drawer (Esc)">
             ×
           </button>
         </span>
       </div>
       {accounts.length === 0 ? (
-        <div className="chip">No accounts configured</div>
+        <div className="text-xs text-primary bg-accent-primary border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10">No accounts configured</div>
       ) : (
         accounts.map((account) => (
-          <div key={account.name} className={`drawer__item drawer__item--row ${selectedAccount === account.name ? 'is-active' : ''}`}>
+          <div key={account.name} className={`w-full text-left bg-transparent border border-transparent rounded-[14px] text-primary font-mono text-[13px] cursor-pointer transition-all duration-150 ease-in-out flex items-center gap-2 p-0 hover:bg-[rgba(99,102,241,0.05)] hover:border-normal focus-visible:outline-2 focus-visible:outline-focus focus-visible:-outline-offset-2 ${selectedAccount === account.name ? 'border-accent-primary bg-[rgba(99,102,241,0.08)]' : ''}`}>
             <button
-              className="drawer__item-main"
+              className="flex-1 text-left px-3 bg-transparent border-transparent text-primary font-mono cursor-pointer"
               onClick={() => setSelectedAccount(account.name)}
             >
-              <span className="drawer__item-title">{account.name}</span>
-              <span className="drawer__item-meta">
+              <span className="font-medium text-[13px]">{account.name}</span>
+              <span className="text-xs text-secondary mt-0.5">
                 {account.config.provider_id || 'provider'} • {account.config.model || 'model'}
                 {account.is_default ? ' • Default' : ''}
               </span>
             </button>
             <button
-              className="drawer__item-action"
+              className="mr-2 px-[6px_10px] border border-normal border-transparent text-secondary text-xs cursor-pointer transition-all duration-150 ease-in-out hover:text-primary hover:border-accent-primary"
               onClick={() => setDefaultAccount(account.name)}
               title="Set default"
             >
               Default
             </button>
             <button
-              className="drawer__item-action"
+              className="mr-2 px-[6px_10px] border border-normal border-transparent text-secondary text-xs cursor-pointer transition-all duration-150 ease-in-out hover:text-primary hover:border-accent-primary"
               onClick={() => deleteAccount(account.name)}
               title="Delete account"
             >
@@ -357,34 +358,34 @@ function AccountsTab({ onClose }: AccountsTabProps) {
         ))
       )}
 
-      <div className="drawer__form">
-        <div className="drawer__section-title">Add account</div>
+      <div className="flex flex-col gap-2 p-2 border-t border-normal">
+        <div className="text-xs text-secondary uppercase tracking-widest">Add account</div>
         <input
-          className="drawer__input"
+          className="px-[10px] py-2 rounded-[14px] border border-normal bg-surface-muted text-primary font-mono text-[13px] focus:outline-2 focus:outline-focus focus:-outline-offset-2"
           placeholder="Account name"
           value={formState.name}
           onChange={(event) => setFormState({ ...formState, name: event.target.value })}
         />
         <input
-          className="drawer__input"
+          className="px-[10px] py-2 rounded-[14px] border border-normal bg-surface-muted text-primary font-mono text-[13px] focus:outline-2 focus:outline-focus focus:-outline-offset-2"
           placeholder="Provider ID"
           value={formState.provider_id}
           onChange={(event) => setFormState({ ...formState, provider_id: event.target.value })}
         />
         <input
-          className="drawer__input"
+          className="px-[10px] py-2 rounded-[14px] border border-normal bg-surface-muted text-primary font-mono text-[13px] focus:outline-2 focus:outline-focus focus:-outline-offset-2"
           placeholder="Model ID"
           value={formState.model}
           onChange={(event) => setFormState({ ...formState, model: event.target.value })}
         />
         <input
-          className="drawer__input"
+          className="px-[10px] py-2 rounded-[14px] border border-normal bg-surface-muted text-primary font-mono text-[13px] focus:outline-2 focus:outline-focus focus:-outline-offset-2"
           placeholder="API key (optional)"
           type="password"
           value={formState.api_key}
           onChange={(event) => setFormState({ ...formState, api_key: event.target.value })}
         />
-        <button className="control drawer__item" onClick={handleSubmit} disabled={submitting}>
+        <button className="w-full text-left px-3 bg-transparent border border-transparent rounded-[14px] text-primary font-mono text-[13px] cursor-pointer transition-all duration-150 ease-in-out hover:bg-[rgba(99,102,241,0.05)] hover:border-normal focus-visible:outline-2 focus-visible:outline-focus focus-visible:-outline-offset-2" onClick={handleSubmit} disabled={submitting}>
           {submitting ? 'Adding...' : 'Add account'}
         </button>
       </div>
@@ -401,17 +402,17 @@ function SettingsTab({ onClose }: SettingsTabProps) {
   const setTheme = useStore((state) => state.setTheme)
 
   return (
-    <div className="drawer__list">
-      <div className="legend">
-        <span className="legend__title">Settings</span>
-        <span className="legend__right">
-          <button className="control chip" onClick={onClose} title="Close drawer (Esc)">
+    <div className="p-2 flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-secondary uppercase tracking-widest">Settings</span>
+        <span className="absolute right-2 bottom-2">
+          <button className="inline-flex items-center gap-2 border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10 text-xs text-primary bg-accent-primary" onClick={onClose} title="Close drawer (Esc)">
             ×
           </button>
         </span>
       </div>
-      <div className="chip">Mode: {theme === 'dark' ? 'Dark' : 'Light'}</div>
-      <button className="control drawer__item" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+      <div className="text-xs text-primary bg-accent-primary border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10">Mode: {theme === 'dark' ? 'Dark' : 'Light'}</div>
+      <button className="w-full text-left px-3 bg-transparent border border-transparent rounded-[14px] text-primary font-mono text-[13px] cursor-pointer transition-all duration-150 ease-in-out hover:bg-[rgba(99,102,241,0.05)] hover:border-normal focus-visible:outline-2 focus-visible:outline-focus focus-visible:-outline-offset-2" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
         Toggle Mode
       </button>
       <ThemePicker />
@@ -425,16 +426,16 @@ function SettingsTab({ onClose }: SettingsTabProps) {
  */
 function InfoTab({ onClose }: InfoTabProps) {
   return (
-    <div className="drawer__list">
-      <div className="legend">
-        <span className="legend__title">Info</span>
-        <span className="legend__right">
-          <button className="control chip" onClick={onClose} title="Close drawer (Esc)">
+    <div className="p-2 flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-secondary uppercase tracking-widest">Info</span>
+        <span className="absolute right-2 bottom-2">
+          <button className="inline-flex items-center gap-2 border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10 text-xs text-primary bg-accent-primary" onClick={onClose} title="Close drawer (Esc)">
             ×
           </button>
         </span>
       </div>
-      <div className="chip">About and Help</div>
+      <div className="text-xs text-primary bg-accent-primary border border-accent-primary rounded-[999px] cursor-pointer transition-all duration-200 ease-in-out z-10">About and Help</div>
     </div>
   )
 }
@@ -523,26 +524,47 @@ export default function RightDrawer() {
   }
 
   return (
-    <div className="drawerOverlay" onClick={handleOverlayClick}>
-      <div className="panel drawer" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="drawer__tabs">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1000] flex items-center justify-end md:items-center md:justify-end" onClick={handleOverlayClick}>
+      <div className="panel w-[35vw] min-w-[320px] max-w-[600px] h-[90vh] bg-surface-raised border-l border-normal flex flex-col shadow-[0_0_30px_rgba(0,0,0,0.3)] animate-slide-in md:w-[35vw] md:min-w-[320px] md:max-w-[600px] md:h-[90vh] max-sm:w-full max-sm:min-w-0 max-sm:h-screen" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="flex flex-col border-b border-normal gap-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              className={`control drawer__tab ${drawerTab === tab.id ? 'is-active' : ''}`}
+              className={`px-4 py-3 md:px-4 md:py-3 text-left bg-transparent border-transparent text-secondary font-mono text-[13px] font-normal cursor-pointer transition-all duration-150 ease-in-out rounded-0 relative z-10 hover:text-primary hover:bg-[rgba(99,102,241,0.05)] focus-visible:outline-2 focus-visible:outline-focus focus-visible:-outline-offset-2 ${drawerTab === tab.id ? 'text-accent-primary font-medium border-accent-primary' : ''}`}
               onClick={() => setDrawerTab(tab.id)}
               aria-selected={drawerTab === tab.id}
               role="tab"
             >
+              {drawerTab === tab.id && (
+                <span className="absolute left-0 top-[50%] -translate-y-[50%] w-[3px] h-[60%] bg-accent-primary rounded-r-[2px]"></span>
+              )}
               {tab.label}
             </button>
           ))}
         </div>
 
-        <div className="drawer__content">
+        <div className="flex-1 overflow-y-auto p-0 flex flex-col">
           {tabComponents[drawerTab]}
         </div>
       </div>
+      <style>{`
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+          }
+          to {
+            transform: translateX(0);
+          }
+        }
+        .animate-slide-in {
+          animation: slideIn 0.2s ease-out;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-slide-in {
+            animation: none;
+          }
+        }
+      `}</style>
     </div>
   )
 }

@@ -1,9 +1,7 @@
-import './TodosList.css'
-
 export function TodosList() {
   return (
-    <div className="todos-list">
-      <div className="todos-list__empty">No active todos</div>
+    <div>
+      <div className="text-tertiary font-mono text-sm text-center p-3 opacity-70">No active todos</div>
     </div>
   )
 }
