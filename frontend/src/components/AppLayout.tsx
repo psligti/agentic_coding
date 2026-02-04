@@ -18,7 +18,7 @@ export function AppLayout() {
 
   return (
     <ThemeProvider>
-      <div className="app-layout">
+      <div className="h-screen w-full flex flex-col bg-surface-base text-primary gap-2 p-2 overflow-hidden">
         <TopBar />
         <ConversationTimeline />
         <ComposerBar />
