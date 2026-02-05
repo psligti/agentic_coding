@@ -7,6 +7,8 @@ interface ThemeContextType {
   mode: Mode
   isDark: boolean
   toggleMode: () => void
+  denseMode: boolean
+  toggleDenseMode: () => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -17,6 +19,7 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [mode, setMode] = useState<Mode>('dark')
+  const [denseMode, setDenseMode] = useState(false)
   const themeId = useCurrentSessionThemeId() || 'aurora'
 
   useEffect(() => {
@@ -31,12 +34,24 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         document.documentElement.classList.add('dark')
       }
     }
+
+    const savedDenseMode = localStorage.getItem('dense-mode') === 'true'
+    setDenseMode(savedDenseMode)
   }, [])
 
   // Apply data-theme attribute for themeId (from session state)
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', themeId)
   }, [themeId])
+
+  // Apply dense class when denseMode changes
+  useEffect(() => {
+    if (denseMode) {
+      document.documentElement.classList.add('dense')
+    } else {
+      document.documentElement.classList.remove('dense')
+    }
+  }, [denseMode])
 
   const toggleMode = () => {
     const newMode: Mode = mode === 'dark' ? 'light' : 'dark'
@@ -49,10 +64,16 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     localStorage.setItem('theme-mode', newMode)
   }
 
+  const toggleDenseMode = () => {
+    const newDenseMode = !denseMode
+    setDenseMode(newDenseMode)
+    localStorage.setItem('dense-mode', String(newDenseMode))
+  }
+
   const isDark = mode === 'dark'
 
   return (
-    <ThemeContext.Provider value={{ mode, isDark, toggleMode }}>
+    <ThemeContext.Provider value={{ mode, isDark, toggleMode, denseMode, toggleDenseMode }}>
       {children}
     </ThemeContext.Provider>
   )

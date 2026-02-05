@@ -111,3 +111,36 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+.dense {
+  line-height: 1.25;
+}
+
+.dense * {
+  padding: 0.5em !important;
+  gap: 0.5em !important;
+}
+
+.dense .gap-sm {
+  gap: 4px !important;
+}
+
+.dense .gap-md {
+  gap: 6px !important;
+}
+
+.dense .pad-sm {
+  padding: 4px !important;
+}
+
+.dense .pad-md {
+  padding: 6px !important;
+}
+
+.dense [class*="border"] {
+  border-width: 0.5px !important;
+}
+
+.dense [class*="separator"] {
+  border-width: 0.5px !important;
+}
