@@ -17,10 +17,15 @@ export default function LeftDashboardDrawer() {
   const setDrawerOpen = useSetDrawerOpen()
 
   const [isNarrowScreen, setIsNarrowScreen] = useState(false)
-
+  const [prevWidth, setPrevWidth] = useState(window.innerWidth)
+  
   useEffect(() => {
     const checkWidth = () => {
-      setIsNarrowScreen(window.innerWidth < 1024)
+      const newWidth = window.innerWidth
+      if (newWidth !== prevWidth) {
+        setIsNarrowScreen(newWidth < 1024)
+        setPrevWidth(newWidth)
+      }
     }
     checkWidth()
     window.addEventListener('resize', checkWidth)
