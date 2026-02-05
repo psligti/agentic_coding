@@ -28,9 +28,13 @@ function App() {
   const setSelectedModel = useSetSelectedModel()
   const setSelectedAccount = useSetSelectedAccount()
   const [sessionsLoaded, setSessionsLoaded] = useState(false)
+  const isCurrentSessionValid = sessionsLoaded
+    && !!currentSession
+    && sessions.some((session) => session.id === currentSession.id)
+  const streamSessionId = isCurrentSessionValid && currentSession ? currentSession.id : ''
 
-  useSessionThemeStream({ sessionId: currentSession?.id || '' })
-  useSessionTelemetryStream({ sessionId: currentSession?.id || '' })
+  useSessionThemeStream({ sessionId: streamSessionId })
+  useSessionTelemetryStream({ sessionId: streamSessionId })
 
   useEffect(() => {
     let isMounted = true
@@ -61,7 +65,11 @@ function App() {
 
   useEffect(() => {
     if (!sessionsLoaded) return
-    if (currentSession) return
+    const isCurrentSessionValid = currentSession
+      ? sessions.some((session) => session.id === currentSession.id)
+      : false
+
+    if (currentSession && isCurrentSessionValid) return
 
     if (sessions.length === 0) {
       createSession('Default Session')
@@ -76,9 +84,13 @@ function App() {
   }, [createSession, currentSession, sessions, sessionsLoaded, setCurrent])
 
   useEffect(() => {
-    if (!currentSession) return
+    if (!sessionsLoaded || !currentSession) return
+
+    const isCurrentSessionValid = sessions.some((session) => session.id === currentSession.id)
+    if (!isCurrentSessionValid) return
+
     fetchMessages(currentSession.id).catch((error) => console.error('Failed to load messages:', error))
-  }, [currentSession, fetchMessages])
+  }, [currentSession, fetchMessages, sessions, sessionsLoaded])
 
   useEffect(() => {
     if (!selectedAgent && agents.length > 0) {

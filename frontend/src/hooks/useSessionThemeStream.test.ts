@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { renderHook, act } from '@testing-library/react'
 import { useSessionThemeStream } from './useSessionThemeStream'
+import { getApi } from './useApiClient'
 
 const mockSetCurrentSession = vi.fn()
 
@@ -60,9 +61,23 @@ class MockEventSource {
 global.EventSource = MockEventSource as any
 
 describe('useSessionThemeStream', () => {
+  const mockedGetApi = vi.mocked(getApi)
+
   beforeEach(() => {
     vi.clearAllMocks()
     mockEventSourceInstance = null
+    vi.useFakeTimers()
+    mockedGetApi.mockResolvedValue({
+      id: 'session-123',
+      title: 'Test Session',
+      theme_id: 'aurora',
+      created_at: '2025-01-01T00:00:00.000Z',
+      updated_at: '2025-01-01T00:00:00.000Z',
+    })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('establishes SSE connection when sessionId is provided', () => {
@@ -105,9 +120,7 @@ describe('useSessionThemeStream', () => {
       theme_id: 'aurora',
     })
 
-    await waitFor(() => {
-      expect(mockSetCurrentSession).toHaveBeenCalled()
-    })
+    expect(mockSetCurrentSession).toHaveBeenCalled()
 
     unmount()
   })
@@ -125,9 +138,7 @@ describe('useSessionThemeStream', () => {
       theme_id: 'midnight',
     })
 
-    await waitFor(() => {
-      expect(mockSetCurrentSession).not.toHaveBeenCalled()
-    })
+    expect(mockSetCurrentSession).not.toHaveBeenCalled()
 
     unmount()
   })
@@ -144,6 +155,74 @@ describe('useSessionThemeStream', () => {
         type: 'ping',
       })
     }).not.toThrow()
+
+    unmount()
+  })
+
+  it('uses increasing backoff delays across consecutive failures', async () => {
+    const { unmount } = renderHook(() =>
+      useSessionThemeStream({ sessionId: 'session-123' })
+    )
+
+    const firstInstance = mockEventSourceInstance
+    await act(async () => {
+      firstInstance?.triggerOpen()
+      firstInstance?.triggerError()
+    })
+
+    await act(async () => {
+      vi.advanceTimersByTime(1000)
+    })
+
+    const secondInstance = mockEventSourceInstance
+    expect(secondInstance).not.toBe(firstInstance)
+
+    await act(async () => {
+      secondInstance?.triggerError()
+    })
+
+    await act(async () => {
+      vi.advanceTimersByTime(1000)
+    })
+    expect(mockEventSourceInstance).toBe(secondInstance)
+
+    await act(async () => {
+      vi.advanceTimersByTime(1000)
+    })
+    expect(mockEventSourceInstance).not.toBe(secondInstance)
+
+    unmount()
+  })
+
+  it('does not reconnect when session is not found (404)', async () => {
+    mockedGetApi.mockImplementation(async (endpoint: string) => {
+      if (endpoint === '/sessions/session-123') {
+        throw { status: 404, message: 'Session not found' }
+      }
+      return {
+        id: 'session-123',
+        title: 'Test Session',
+        theme_id: 'aurora',
+        created_at: '2025-01-01T00:00:00.000Z',
+        updated_at: '2025-01-01T00:00:00.000Z',
+      }
+    })
+
+    const { unmount } = renderHook(() =>
+      useSessionThemeStream({ sessionId: 'session-123' })
+    )
+
+    const oldInstance = mockEventSourceInstance
+    await act(async () => {
+      oldInstance?.triggerOpen()
+      oldInstance?.triggerError()
+    })
+
+    await act(async () => {
+      vi.advanceTimersByTime(10000)
+    })
+
+    expect(mockEventSourceInstance).toBe(oldInstance)
 
     unmount()
   })

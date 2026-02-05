@@ -48,11 +48,7 @@ async def get_messages_from_session(session_id: str) -> List[MessageResponse]:
     # Get messages using SessionManager's get_messages method
     try:
         from opencode_python.storage.store import MessageStorage
-        from opencode_python.core.settings import get_storage_dir
-        from pathlib import Path
-
-        storage_dir = get_storage_dir()
-        message_storage = MessageStorage(storage_dir)
+        message_storage = MessageStorage(client.config.storage_path)
 
         # Get messages
         messages_data = await message_storage.list_messages(session_id)
@@ -135,12 +131,8 @@ async def add_message(
     # Add message using SDK
     try:
         from opencode_python.storage.store import MessageStorage
-        from opencode_python.core.settings import get_storage_dir
-        from pathlib import Path
         from opencode_python.core.models import Message
-
-        storage_dir = get_storage_dir()
-        message_storage = MessageStorage(storage_dir)
+        message_storage = MessageStorage(client.config.storage_path)
 
         # Create message object
         message = Message(

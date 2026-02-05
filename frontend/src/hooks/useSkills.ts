@@ -12,7 +12,6 @@ export function useSkills() {
       const response = await fetchApi<SkillSummary[]>('/skills')
       setSkills(response)
     } catch (error) {
-      console.error('Failed to fetch skills:', error)
       throw error
     }
   }, [setSkills])

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { Session } from '../store'
-import { getApi } from './useApiClient'
+import { getApi, type ApiError } from './useApiClient'
 import { useSetCurrentSession } from '../store'
 import { store } from '../store'
 
@@ -43,6 +43,7 @@ export function useSessionThemeStream(options: UseSessionThemeStreamOptions) {
   const retryCountRef = useRef(0)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isConnectingRef = useRef(false)
+  const isActiveRef = useRef(true)
   const setCurrentSession = useSetCurrentSession()
 
   /**
@@ -94,7 +95,6 @@ export function useSessionThemeStream(options: UseSessionThemeStreamOptions) {
     }
 
     isConnectingRef.current = true
-    retryCountRef.current = 0
 
     const sseUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}/sessions/${sessionId}/stream`
 
@@ -135,7 +135,7 @@ export function useSessionThemeStream(options: UseSessionThemeStreamOptions) {
         }
       }
 
-      eventSource.onerror = (error) => {
+      eventSource.onerror = async (error) => {
         console.error('Session theme SSE connection error:', error)
         isConnectingRef.current = false
 
@@ -144,11 +144,28 @@ export function useSessionThemeStream(options: UseSessionThemeStreamOptions) {
           eventSourceRef.current = null
         }
 
+        if (!isActiveRef.current) {
+          return
+        }
+
+        try {
+          await getApi(`/sessions/${sessionId}`)
+        } catch (sessionError) {
+          const apiError = sessionError as ApiError
+          if (apiError.status === 404) {
+            console.warn(`Stopping theme SSE reconnect: session not found (${sessionId})`)
+            return
+          }
+        }
+
         // Attempt reconnection with exponential backoff
         if (retryCountRef.current < maxRetries) {
           const retryDelay = Math.pow(2, retryCountRef.current) * 1000 // 1s, 2s, 4s, 8s, 16s
 
           reconnectTimeoutRef.current = setTimeout(() => {
+            if (!isActiveRef.current) {
+              return
+            }
             retryCountRef.current++
             console.log(`Attempting session theme SSE reconnection (attempt ${retryCountRef.current}/${maxRetries})`)
             connect()
@@ -183,10 +200,12 @@ export function useSessionThemeStream(options: UseSessionThemeStreamOptions) {
   // Auto-connect when sessionId is available
   useEffect(() => {
     if (!sessionId) return
+    isActiveRef.current = true
 
     connect()
 
     return () => {
+      isActiveRef.current = false
       disconnect()
     }
   }, [sessionId])

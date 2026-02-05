@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { getApi } from './useApiClient'
+import { getApi, type ApiError } from './useApiClient'
 import { useSetTelemetry } from '../store'
 import type { TelemetryData } from '../store'
 
@@ -19,6 +19,15 @@ interface SessionSSEEvent {
   session_id?: string
   theme_id?: string
   telemetry?: TelemetryData
+  git?: TelemetryData['git']
+  tools?: TelemetryData['tools']
+  effort_inputs?: {
+    duration_ms?: number
+    token_total?: number
+    tool_count?: number
+  }
+  effort_score?: number
+  directory_scope?: string
 }
 
 /**
@@ -44,6 +53,7 @@ export function useSessionTelemetryStream(options: UseSessionTelemetryStreamOpti
   const retryCountRef = useRef(0)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isConnectingRef = useRef(false)
+  const isActiveRef = useRef(true)
   const setTelemetry = useSetTelemetry()
 
   /**
@@ -52,9 +62,8 @@ export function useSessionTelemetryStream(options: UseSessionTelemetryStreamOpti
    */
   const refetchTelemetry = async () => {
     try {
-      const response = await getApi<TelemetryData>(`/sessions/${sessionId}/telemetry`)
+      const response = await getApi<SessionSSEEvent>(`/sessions/${sessionId}/telemetry`)
       setTelemetry(response)
-      console.log('Refetched telemetry snapshot:', response)
     } catch (error) {
       console.error('Failed to refetch telemetry snapshot:', error)
     }
@@ -69,7 +78,6 @@ export function useSessionTelemetryStream(options: UseSessionTelemetryStreamOpti
     }
 
     isConnectingRef.current = true
-    retryCountRef.current = 0
 
     const sseUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}/sessions/${sessionId}/stream`
 
@@ -91,9 +99,14 @@ export function useSessionTelemetryStream(options: UseSessionTelemetryStreamOpti
 
           switch (data.type) {
             case 'telemetry':
-              if (data.session_id === sessionId && data.telemetry) {
+              if (data.session_id !== sessionId) {
+                break
+              }
+
+              if (data.telemetry) {
                 setTelemetry(data.telemetry)
-                console.log('Telemetry updated:', data.telemetry)
+              } else if (data.git || data.tools || data.effort_inputs || data.effort_score !== undefined) {
+                setTelemetry(data)
               }
               break
 
@@ -108,7 +121,7 @@ export function useSessionTelemetryStream(options: UseSessionTelemetryStreamOpti
         }
       }
 
-      eventSource.onerror = (error) => {
+      eventSource.onerror = async (error) => {
         console.error('Session telemetry SSE connection error:', error)
         isConnectingRef.current = false
 
@@ -117,10 +130,27 @@ export function useSessionTelemetryStream(options: UseSessionTelemetryStreamOpti
           eventSourceRef.current = null
         }
 
+        if (!isActiveRef.current) {
+          return
+        }
+
+        try {
+          await getApi(`/sessions/${sessionId}`)
+        } catch (sessionError) {
+          const apiError = sessionError as ApiError
+          if (apiError.status === 404) {
+            console.warn(`Stopping telemetry SSE reconnect: session not found (${sessionId})`)
+            return
+          }
+        }
+
         if (retryCountRef.current < maxRetries) {
           const retryDelay = Math.pow(2, retryCountRef.current) * 1000
 
           reconnectTimeoutRef.current = setTimeout(() => {
+            if (!isActiveRef.current) {
+              return
+            }
             retryCountRef.current++
             console.log(`Attempting session telemetry SSE reconnection (attempt ${retryCountRef.current}/${maxRetries})`)
             connect()
@@ -154,10 +184,12 @@ export function useSessionTelemetryStream(options: UseSessionTelemetryStreamOpti
 
   useEffect(() => {
     if (!sessionId) return
+    isActiveRef.current = true
 
     connect()
 
     return () => {
+      isActiveRef.current = false
       disconnect()
     }
   }, [sessionId])

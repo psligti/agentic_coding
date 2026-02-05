@@ -1,4 +1,5 @@
 import { useStore as useZustandStore } from 'zustand/react'
+import { useShallow } from 'zustand/react/shallow'
 import { createStore } from 'zustand/vanilla'
 import type { AccountSummary, AgentSummary, ModelSummary, SkillSummary, ToolSummary } from '../types/api'
 
@@ -93,6 +94,45 @@ export interface TelemetryData {
   directory_scope?: string
 }
 
+type TelemetryPayload = Partial<TelemetryData> & {
+  effort_inputs?: {
+    duration_ms?: number
+    token_total?: number
+    tool_count?: number
+  }
+  effort_score?: number
+}
+
+const normalizeTelemetry = (payload?: TelemetryPayload): TelemetryData => {
+  const effortFromFlat = payload?.effort_inputs || {}
+  const effortFromNested = payload?.effort || {}
+
+  return {
+    git: {
+      is_repo: payload?.git?.is_repo ?? false,
+      branch: payload?.git?.branch,
+      dirty_count: payload?.git?.dirty_count,
+      staged_count: payload?.git?.staged_count,
+      ahead: payload?.git?.ahead,
+      behind: payload?.git?.behind,
+      conflict: payload?.git?.conflict,
+    },
+    tools: {
+      running: payload?.tools?.running,
+      last: payload?.tools?.last,
+      error_count: payload?.tools?.error_count,
+      recent: payload?.tools?.recent,
+    },
+    effort: {
+      duration_ms: effortFromNested.duration_ms ?? effortFromFlat.duration_ms,
+      token_total: effortFromNested.token_total ?? effortFromFlat.token_total,
+      tool_count: effortFromNested.tool_count ?? effortFromFlat.tool_count,
+      effort_score: effortFromNested.effort_score ?? payload?.effort_score,
+    },
+    directory_scope: payload?.directory_scope,
+  }
+}
+
 export interface AppState {
   // Sessions
   sessions: Session[]
@@ -177,7 +217,7 @@ export interface AppState {
   setLeftDashboardPinned: (pinned: boolean) => void
 
   // Telemetry Actions
-  setTelemetry: (telemetry: TelemetryData) => void
+  setTelemetry: (telemetry: TelemetryPayload) => void
 }
 
 const defaultTheme = 'dark'
@@ -274,7 +314,7 @@ const store = createStore<AppState>((set) => ({
   setSelectedAccount: (selectedAccount) => set({ selectedAccount }),
   setLeftDashboardOpen: (open) => set({ leftDashboardOpen: open }),
   setLeftDashboardPinned: (pinned) => set({ leftDashboardPinned: pinned }),
-  setTelemetry: (telemetry) => set({ telemetry }),
+  setTelemetry: (telemetry) => set({ telemetry: normalizeTelemetry(telemetry) }),
 }))
 
 export { store }
@@ -293,7 +333,7 @@ export const useMessagesState = () => useStore((state) => state.messages)
 export const useTheme = () => useStore((state) => state.theme)
 export const usePalette = () => useStore((state) => state.paletteOpen)
 export const useSetPaletteOpen = () => useStore((state) => state.setPaletteOpen)
-export const useDrawer = () => useStore((state) => ({ open: state.drawerOpen, tab: state.drawerTab }))
+export const useDrawer = () => useStore(useShallow((state) => ({ open: state.drawerOpen, tab: state.drawerTab })))
 export const useSetDrawerOpen = () => useStore((state) => state.setDrawerOpen)
 export const useSetDrawerTab = () => useStore((state) => state.setDrawerTab)
 export const useComposer = () => useStore((state) => state.composer)
@@ -323,7 +363,7 @@ export const useAccountsState = () => useStore((state) => state.accounts)
 export const useSetAccounts = () => useStore((state) => state.setAccounts)
 export const useSelectedAccount = () => useStore((state) => state.selectedAccount)
 export const useSetSelectedAccount = () => useStore((state) => state.setSelectedAccount)
-export const useLeftDashboard = () => useStore((state) => ({ open: state.leftDashboardOpen, pinned: state.leftDashboardPinned }))
+export const useLeftDashboard = () => useStore(useShallow((state) => ({ open: state.leftDashboardOpen, pinned: state.leftDashboardPinned })))
 export const useSetLeftDashboardOpen = () => useStore((state) => state.setLeftDashboardOpen)
 export const useSetLeftDashboardPinned = () => useStore((state) => state.setLeftDashboardPinned)
 export const useTelemetry = () => useStore((state) => state.telemetry)

@@ -22,6 +22,12 @@ class Storage:
         """Get full path for a key"""
         return self.storage_dir / "/".join(keys)
 
+    def _with_json_suffix(self, path: Path) -> Path:
+        """Normalize storage file path to .json format."""
+        if path.suffix == ".json":
+            return path
+        return path.with_suffix(".json")
+
     async def _ensure_dir(self, path: Path) -> None:
         """Ensure directory exists"""
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -29,7 +35,10 @@ class Storage:
     async def read(self, key: List[str]) -> Optional[Dict[str, Any]]:
         """Read JSON data by key"""
         try:
-            path = await self._get_path(*key)
+            legacy_path = await self._get_path(*key)
+            path = self._with_json_suffix(legacy_path)
+            if not path.exists() and legacy_path.exists():
+                path = legacy_path
             async with aiofiles.open(path, mode="r") as f:
                 content = await f.read()
                 data: Dict[str, Any] = json.loads(content)
@@ -39,7 +48,7 @@ class Storage:
 
     async def write(self, key: List[str], data: Dict[str, Any]) -> None:
         """Write JSON data by key"""
-        path = await self._get_path(*key)
+        path = self._with_json_suffix(await self._get_path(*key))
         await self._ensure_dir(path)
         async with aiofiles.open(path, mode="w") as f:
             content = json.dumps(data, indent=2, ensure_ascii=False)
@@ -54,12 +63,18 @@ class Storage:
 
     async def remove(self, key: List[str]) -> bool:
         """Remove data by key"""
-        try:
-            path = await self._get_path(*key)
+        path = await self._get_path(*key)
+        json_path = self._with_json_suffix(path)
+
+        if json_path.exists():
+            json_path.unlink()
+            return True
+
+        if path.exists():
             path.unlink()
             return True
-        except FileNotFoundError:
-            return False
+
+        return False
 
     async def list(self, prefix: List[str]) -> List[List[str]]:
         """List all keys with given prefix"""
@@ -67,10 +82,16 @@ class Storage:
         if not prefix_path.exists():
             return []
         keys = []
-        for path in prefix_path.rglob("*.json"):
+        for path in prefix_path.rglob("*"):
+            if not path.is_file():
+                continue
             relative = path.relative_to(self.storage_dir)
-            keys.append(list(relative.parts)[0:len(prefix)] + [relative.stem])
-            keys.sort()
+            parts = list(relative.parts)
+            if parts[-1].endswith(".json"):
+                parts[-1] = Path(parts[-1]).stem
+            keys.append(parts)
+
+        keys.sort()
         return keys
 
 
@@ -111,8 +132,7 @@ class SessionStorage(Storage):
 
     async def delete_session(self, session_id: str, project_id: str) -> bool:
         """Delete session"""
-        key = session_id + ".json"
-        return await self.remove(["session", project_id, key])
+        return await self.remove(["session", project_id, session_id])
 
 
 class MessageStorage(Storage):

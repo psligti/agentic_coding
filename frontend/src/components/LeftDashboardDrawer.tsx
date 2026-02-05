@@ -151,7 +151,7 @@ export default function LeftDashboardDrawer() {
         <div className="flex flex-col gap-1">
           <div className="text-[11px] text-secondary uppercase tracking-wide">Effort</div>
           <div className="text-xl leading-none">
-            {getEffortEmoji(telemetry.effort.effort_score)}
+            {getEffortEmoji(telemetry.effort?.effort_score)}
           </div>
         </div>
 

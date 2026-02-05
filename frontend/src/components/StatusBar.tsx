@@ -14,7 +14,7 @@ export function StatusBar({ className = '' }: StatusBarProps) {
   const formattedTokens = `${formatTokens(tokenUsage.total)} / ${tokenUsage.limit ? formatTokens(tokenUsage.limit) : '∞'}`
   const gitIndicator = formatGitIndicator(telemetry.git)
   const toolsIndicator = formatToolsIndicator(telemetry.tools)
-  const effortEmoji = getEffortEmoji(telemetry.effort.effort_score)
+  const effortEmoji = getEffortEmoji(telemetry.effort?.effort_score)
 
   return (
     <div className={`flex items-center justify-between bg-surface-panel border border-normal rounded-[14px] px-3 py-2 h-9 text-xs flex-shrink-0 ${className}`}>
