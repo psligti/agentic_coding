@@ -44,6 +44,9 @@ router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
 # Singleton storage directory for API
 _api_storage_dir = None
 
+# Singleton client instance for API
+_api_client = None
+
 
 async def get_sdk_client() -> OpenCodeAsyncClient:
     """Get SDK client instance with shared storage.
@@ -54,10 +57,12 @@ async def get_sdk_client() -> OpenCodeAsyncClient:
     Raises:
         HTTPException: If client initialization fails.
     """
-    global _api_storage_dir
+    global _api_storage_dir, _api_client
 
     try:
-        # Create or reuse a temporary storage directory
+        if _api_client is not None:
+            return _api_client
+
         if _api_storage_dir is None:
             # Use a fixed temp directory for consistency, but use test_sessions if in test mode
             if os.environ.get("PYTEST_CURRENT_TEST"):
@@ -75,8 +80,8 @@ async def get_sdk_client() -> OpenCodeAsyncClient:
             project_dir=project_dir,
         )
         # Create client with custom config
-        client = OpenCodeAsyncClient(config=config)
-        return client
+        _api_client = OpenCodeAsyncClient(config=config)
+        return _api_client
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

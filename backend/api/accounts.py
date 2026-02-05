@@ -52,7 +52,7 @@ def _sanitize_provider(provider: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-@router.get("/", response_model=List[Dict[str, Any]])
+@router.get("", response_model=List[Dict[str, Any]])
 async def list_accounts() -> List[Dict[str, Any]]:
     """List configured provider accounts."""
     try:
@@ -66,7 +66,7 @@ async def list_accounts() -> List[Dict[str, Any]]:
         )
 
 
-@router.post("/", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 async def create_account(request: AccountCreateRequest = Body(...)) -> Dict[str, Any]:
     """Create a new provider account."""
     if not request.name.strip():

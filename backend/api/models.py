@@ -10,7 +10,7 @@ from api.sessions import get_sdk_client
 router = APIRouter(prefix="/api/v1/models", tags=["models"])
 
 
-@router.get("/", response_model=List[Dict[str, Any]])
+@router.get("", response_model=List[Dict[str, Any]])
 async def list_models() -> List[Dict[str, Any]]:
     """List models from configured accounts.
 

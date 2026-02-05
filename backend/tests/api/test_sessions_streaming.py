@@ -4,6 +4,7 @@ import asyncio
 import json
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -235,3 +236,167 @@ async def test_update_session_not_found():
             json={"theme_id": "ocean"},
         )
         assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_telemetry_event_payload_structure(mock_sdk_client):
+    """Test that telemetry event has correct JSON payload structure."""
+    session = await mock_sdk_client.create_session(title="Test Telemetry Structure")
+
+    try:
+        async def mock_stream_events(*args, **kwargs):
+            yield "event: connected\n"
+            yield f'data: {json.dumps({"type": "connected", "session_id": session.id})}\n\n'
+            yield "event: session_theme\n"
+            yield f'data: {json.dumps({"type": "session_theme", "session_id": session.id, "theme_id": "aurora"})}\n\n'
+            yield "event: telemetry\n"
+            yield f'data: {json.dumps({"type": "telemetry", "session_id": session.id, "git": {}, "tools": {}, "effort_inputs": {}, "effort_score": 3})}\n\n'
+
+        with patch("api.sessions_streaming.get_sdk_client", return_value=mock_sdk_client):
+            with patch("api.sessions_streaming._stream_session_events", side_effect=mock_stream_events):
+                async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+                    response = await ac.get(f"/api/v1/sessions/{session.id}/stream")
+                    assert response.status_code == 200
+
+                    content_str = response.text
+                    events = _parse_sse_events(content_str)
+                    telemetry_events = [e for e in events if e.get("type") == "telemetry"]
+
+                    assert len(telemetry_events) > 0, "No telemetry events found"
+
+                    telemetry = telemetry_events[0]
+
+                    assert "type" in telemetry, "Telemetry event missing 'type' field"
+                    assert "session_id" in telemetry, "Telemetry event missing 'session_id' field"
+                    assert "git" in telemetry, "Telemetry event missing 'git' field"
+                    assert "tools" in telemetry, "Telemetry event missing 'tools' field"
+                    assert "effort_inputs" in telemetry, "Telemetry event missing 'effort_inputs' field"
+                    assert "effort_score" in telemetry, "Telemetry event missing 'effort_score' field"
+
+                    assert isinstance(telemetry["type"], str)
+                    assert isinstance(telemetry["session_id"], str)
+                    assert isinstance(telemetry["git"], dict)
+                    assert isinstance(telemetry["tools"], dict)
+                    assert isinstance(telemetry["effort_inputs"], dict)
+                    assert isinstance(telemetry["effort_score"], int)
+    finally:
+        await mock_sdk_client.delete_session(session.id)
+
+
+@pytest.mark.asyncio
+async def test_telemetry_event_type_field(mock_sdk_client):
+    """Test that telemetry event includes type field set to 'telemetry'."""
+    session = await mock_sdk_client.create_session(title="Test Telemetry Type")
+
+    try:
+        with patch("api.sessions_streaming.get_sdk_client", return_value=mock_sdk_client):
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+                response = await ac.get(f"/api/v1/sessions/{session.id}/stream", timeout=5.0)
+                assert response.status_code == 200
+
+                content_bytes = b""
+                async for chunk in response.aiter_bytes():
+                    content_bytes += chunk
+                    if b"event: telemetry" in content_bytes:
+                        break
+
+                await response.aclose()
+
+                content_str = content_bytes.decode("utf-8")
+
+                events = _parse_sse_events(content_str)
+                telemetry_events = [e for e in events if e.get("type") == "telemetry"]
+
+                assert len(telemetry_events) > 0, "No telemetry events found"
+
+                for telemetry in telemetry_events:
+                    assert telemetry["type"] == "telemetry", \
+                        f"Expected type='telemetry', got type='{telemetry['type']}'"
+    finally:
+        await mock_sdk_client.delete_session(session.id)
+
+
+@pytest.mark.asyncio
+async def test_telemetry_event_format_pattern(mock_sdk_client):
+    """Test that telemetry event follows existing SSE format pattern."""
+    session = await mock_sdk_client.create_session(title="Test Telemetry Format")
+
+    try:
+        with patch("api.sessions_streaming.get_sdk_client", return_value=mock_sdk_client):
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+                response = await ac.get(f"/api/v1/sessions/{session.id}/stream", timeout=5.0)
+                assert response.status_code == 200
+
+                content_bytes = b""
+                async for chunk in response.aiter_bytes():
+                    content_bytes += chunk
+                    if b"event: telemetry" in content_bytes:
+                        break
+
+                await response.aclose()
+
+                content_str = content_bytes.decode("utf-8")
+
+                assert "event: telemetry" in content_str, "Missing 'event: telemetry' line"
+                assert content_str.count("event: telemetry") > 0, "No telemetry event lines found"
+
+                events = _parse_sse_events(content_str)
+                telemetry_events = [e for e in events if e.get("type") == "telemetry"]
+
+                assert len(telemetry_events) > 0, "No telemetry events parsed"
+
+                for telemetry in telemetry_events:
+                    assert telemetry["type"] == "telemetry", \
+                        "Event type field must be 'telemetry'"
+    finally:
+        await mock_sdk_client.delete_session(session.id)
+
+
+@pytest.mark.asyncio
+async def test_telemetry_emitted_on_connection(mock_sdk_client):
+    """Test that initial telemetry is emitted on connection."""
+    session = await mock_sdk_client.create_session(title="Test Initial Telemetry")
+
+    try:
+        with patch("api.sessions_streaming.get_sdk_client", return_value=mock_sdk_client):
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+                response = await ac.get(f"/api/v1/sessions/{session.id}/stream", timeout=5.0)
+                assert response.status_code == 200
+
+                content_bytes = b""
+                async for chunk in response.aiter_bytes():
+                    content_bytes += chunk
+                    if b"event: telemetry" in content_bytes:
+                        break
+
+                await response.aclose()
+
+                content_str = content_bytes.decode("utf-8")
+
+                lines = [line.strip() for line in content_str.split("\n") if line.strip()]
+
+                connected_pos = None
+                session_theme_pos = None
+                telemetry_pos = None
+
+                for i, line in enumerate(lines):
+                    if line == "event: connected":
+                        connected_pos = i
+                    elif line == "event: session_theme":
+                        session_theme_pos = i
+                    elif line == "event: telemetry":
+                        telemetry_pos = i
+
+                assert connected_pos is not None, "Missing connected event"
+                assert session_theme_pos is not None, "Missing session_theme event"
+                assert telemetry_pos is not None, "Missing telemetry event"
+
+                assert telemetry_pos > connected_pos, "Telemetry should come after connected"
+                assert telemetry_pos > session_theme_pos, "Telemetry should come after session_theme"
+
+                events = _parse_sse_events(content_str)
+                telemetry_events = [e for e in events if e.get("type") == "telemetry"]
+
+                assert len(telemetry_events) > 0, "No telemetry events found in initial stream"
+    finally:
+        await mock_sdk_client.delete_session(session.id)

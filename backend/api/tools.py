@@ -10,7 +10,7 @@ from opencode_python.tools import create_complete_registry
 router = APIRouter(prefix="/api/v1/tools", tags=["tools"])
 
 
-@router.get("/", response_model=List[Dict[str, Any]])
+@router.get("", response_model=List[Dict[str, Any]])
 async def list_tools() -> List[Dict[str, Any]]:
     """List all available tools.
 

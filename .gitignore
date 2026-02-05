@@ -11,3 +11,8 @@ opencode/
 .wt/cache/
 .worktrees/
 .sisyphus/
+
+# Ignore environment files with secrets
+.env
+.env.local
+.env.*.local

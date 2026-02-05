@@ -1,11 +1,8 @@
 {
-  "active_plan": "/Users/parkersligting/develop/pt/agentic_coding/.worktrees/webapp/.sisyphus/plans/tailwind-multitheme-migration.md",
-  "started_at": "2026-02-03T18:58:01.797Z",
-  "session_ids": [
-    "ses_3db432a86ffekPNnQVBePoaVdg",
-    "ses_3db432a86ffekPNnQVBePoaVdg",
-    "ses_3dadde7bfffeJ5SCWYSDBx9Foc",
-    "ses_3daad11c4ffeoNYkApvYc6rmwz"
-  ],
-  "plan_name": "tailwind-multitheme-migration"
+  "active_plan": "/Users/parkersligting/develop/pt/agentic_coding/.worktrees/webapp/.sisyphus/plans/workhorse-ui.md",
+  "started_at": "2025-02-05T18:01:02.175Z",
+  "session_ids": [],
+  "plan_name": "workhorse-ui",
+  "completed": true,
+  "completed_at": "2026-02-05T19:00:00.000Z"
 }
