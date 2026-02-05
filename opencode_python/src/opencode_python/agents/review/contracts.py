@@ -46,7 +46,7 @@ class Finding(pd.BaseModel):
 
 
 class MergeGate(pd.BaseModel):
-    decision: Literal["approve", "needs_changes", "block"]
+    decision: Literal["approve", "needs_changes", "block", "approve_with_warnings"]
     must_fix: List[str] = pd.Field(default_factory=list)
     should_fix: List[str] = pd.Field(default_factory=list)
     notes_for_coding_agent: List[str] = pd.Field(default_factory=list)
@@ -109,20 +109,22 @@ def get_review_output_schema() -> str:
         JSON schema string with explicit type information
     """
 
-    return f'''You MUST output valid JSON matching this exact schema. Do NOT add any fields outside this schema:
+    return f'''You MUST output valid JSON matching this exact schema. The output is parsed directly by the ReviewOutput Pydantic model with no post-processing. Do NOT add any fields outside this schema:
 
 {ReviewOutput.model_json_schema()}
 
  CRITICAL RULES:
-- Include ALL required fields: agent, summary, severity, scope, merge_gate
-- NEVER include extra fields not in this schema (will cause validation errors)
-- For findings: NEVER include fields like 'type', 'message' - only use the fields listed above
-- severity in findings is NOT the same as severity in the root object
-- findings severity options: 'warning', 'critical', 'blocking' (NOT 'merge')
-- root severity options: 'merge', 'warning', 'critical', 'blocking'
-- All fields are MANDATORY unless marked as optional with "or null"
-- Empty arrays are allowed: [], null values are allowed only where specified
-- Return ONLY the JSON object, no other text, no markdown code blocks
+ - Include ALL required fields: agent, summary, severity, scope, merge_gate
+ - NEVER include extra fields not in this schema (will cause validation errors)
+ - For findings: NEVER include fields like 'type', 'message' - only use the fields listed above
+ - severity in findings is NOT the same as severity in the root object
+ - findings severity options: 'warning', 'critical', 'blocking' (NOT 'merge')
+ - root severity options: 'merge', 'warning', 'critical', 'blocking'
+ - All fields are MANDATORY unless marked as optional with "or null"
+ - Empty arrays are allowed: [], null values are allowed only where specified
+ - Return ONLY the JSON object, no other text, no markdown code blocks
+ - Output must be valid JSON that passes ReviewOutput Pydantic validation as-is
+ - Do NOT include planning, analysis, or commentary text outside the JSON object
 
 EXAMPLE VALID OUTPUT:
 {{
@@ -163,9 +165,11 @@ EXAMPLE WITH FINDING:
       "title": "Hardcoded API key",
       "severity": "blocking",
       "confidence": "high",
+      "owner": "security",
       "estimate": "S",
       "evidence": "Line 45 contains API_KEY='sk-12345'",
       "risk": "Secret exposed in source code",
+      "recommendation": "Remove the key and load it from secure config"
     }}
   ],
   "merge_gate": {{
@@ -173,5 +177,38 @@ EXAMPLE WITH FINDING:
     "must_fix": ["Hardcoded API key in config.py"],
     "should_fix": [],
     "notes_for_coding_agent": ["Rotate API key immediately"]
+  }}
+}}
+
+EXAMPLE WITH WARNINGS:
+{{
+  "agent": "style",
+  "summary": "Minor style issues found",
+  "severity": "warning",
+  "scope": {{
+    "relevant_files": ["src/utils.py"],
+    "ignored_files": [],
+    "reasoning": "Code style review only"
+  }},
+  "checks": [],
+  "skips": [],
+  "findings": [
+    {{
+      "id": "STYLE-001",
+      "title": "Line too long",
+      "severity": "warning",
+      "confidence": "medium",
+      "owner": "style",
+      "estimate": "S",
+      "evidence": "Line 45 exceeds 100 characters",
+      "risk": "Code readability may suffer",
+      "recommendation": "Split line across multiple lines"
+    }}
+  ],
+  "merge_gate": {{
+    "decision": "approve_with_warnings",
+    "must_fix": [],
+    "should_fix": ["STYLE-001"],
+    "notes_for_coding_agent": ["Style review complete"]
   }}
 }}'''
