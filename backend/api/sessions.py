@@ -69,9 +69,10 @@ async def get_sdk_client() -> OpenCodeAsyncClient:
 
         # Create SDKConfig with custom project_dir and storage_path
         storage_path = Path(_api_storage_dir)
+        project_dir = Path(os.environ.get("WEBAPP_PROJECT_DIR", Path.cwd()))
         config = SDKConfig(
             storage_path=storage_path,
-            project_dir=storage_path,
+            project_dir=project_dir,
         )
         # Create client with custom config
         client = OpenCodeAsyncClient(config=config)
@@ -83,7 +84,7 @@ async def get_sdk_client() -> OpenCodeAsyncClient:
         )
 
 
-@router.get("/", response_model=Dict[str, Any])
+@router.get("", response_model=Dict[str, Any])
 async def list_sessions() -> Dict[str, Any]:
     """List all sessions.
 
@@ -160,7 +161,7 @@ async def get_session(session_id: str) -> Dict[str, Any]:
         )
 
 
-@router.post("/", response_model=Dict[str, Any])
+@router.post("", response_model=Dict[str, Any])
 async def create_session(request: CreateSessionRequest = Body(...)) -> Dict[str, Any]:
     """Create a new session.
 

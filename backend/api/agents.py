@@ -39,7 +39,7 @@ task_status: Dict[str, str] = {}
 router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 
 
-@router.get("/", response_model=list[Dict[str, Any]])
+@router.get("", response_model=list[Dict[str, Any]])
 async def list_agents() -> list[Dict[str, Any]]:
     """List all available agents.
 
@@ -86,9 +86,10 @@ async def get_sdk_client() -> OpenCodeAsyncClient:
             _api_storage_dir = os.path.join(tempfile.gettempdir(), "api_agents")
 
         storage_path = Path(_api_storage_dir)
+        project_dir = Path(os.environ.get("WEBAPP_PROJECT_DIR", Path.cwd()))
         config = SDKConfig(
             storage_path=storage_path,
-            project_dir=storage_path,
+            project_dir=project_dir,
         )
         client = OpenCodeAsyncClient(config=config)
         return client
