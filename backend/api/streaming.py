@@ -3,37 +3,75 @@
 import asyncio
 import json
 import time
-from datetime import datetime
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator, Optional, Set
 
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 
-from opencode_python.sdk import OpenCodeAsyncClient
+from api.sessions import get_sdk_client
 
 
 router = APIRouter(prefix="/api/v1/tasks", tags=["tasks"])
 
 
 # Global storage for active stream tasks
-_active_streams: dict[str, asyncio.Task] = {}
+_active_streams: dict[str, asyncio.Task[None]] = {}
+
+# Global storage for task subscribers
+_task_subscribers: dict[str, Set[asyncio.Queue[str]]] = {}
 
 
-async def get_sdk_client() -> OpenCodeAsyncClient:
-    """Get SDK client instance with shared storage.
+async def _notify_agent_started(task_id: str, agent_name: str) -> None:
+    if task_id not in _task_subscribers:
+        return
 
-    Returns:
-        OpenCodeAsyncClient: Initialized SDK client.
+    event_data = json.dumps({
+        "type": "start",
+        "task_id": task_id,
+        "agent_name": agent_name,
+    })
 
-    Raises:
-        HTTPException: If client initialization fails.
-    """
-    from api.sessions import get_sdk_client as get_api_client
+    for queue in _task_subscribers[task_id]:
+        try:
+            await queue.put(event_data)
+        except Exception:
+            pass
 
-    client = await get_api_client()
-    # Ensure client is consistent by using default config
-    # This makes sure the client behaves the same way regardless of how it's created
-    return client
+
+async def _notify_agent_finished(task_id: str, agent_name: str, duration: float) -> None:
+    if task_id not in _task_subscribers:
+        return
+
+    event_data = json.dumps({
+        "type": "finish",
+        "task_id": task_id,
+        "agent_name": agent_name,
+        "duration": duration,
+    })
+
+    for queue in _task_subscribers[task_id]:
+        try:
+            await queue.put(event_data)
+        except Exception:
+            pass
+
+
+async def _notify_agent_error(task_id: str, agent_name: str, error: str) -> None:
+    if task_id not in _task_subscribers:
+        return
+
+    event_data = json.dumps({
+        "type": "error",
+        "task_id": task_id,
+        "agent_name": agent_name,
+        "message": error,
+    })
+
+    for queue in _task_subscribers[task_id]:
+        try:
+            await queue.put(event_data)
+        except Exception:
+            pass
 
 
 async def stream_task_events(task_id: str, request: Request) -> AsyncGenerator[str, None]:
@@ -50,73 +88,70 @@ async def stream_task_events(task_id: str, request: Request) -> AsyncGenerator[s
 
     # Verify session exists and get messages
     session = None
-    messages_list = []
+    messages_list: list[Any] = []
+    queue: Optional[asyncio.Queue[str]] = None
 
     try:
         session = await client.get_session(task_id)
         if session is None:
-            # Session not found - this will be handled by the endpoint
             return
 
-        # Try to get messages - method might not exist in all SDK versions
         if hasattr(client, 'get_messages'):
             try:
                 messages = await client.get_messages(task_id)
                 messages_list = messages.messages if messages else []
             except Exception:
-                # If get_messages fails, use empty list
                 messages_list = []
         else:
-            # No get_messages method, use empty list
             messages_list = []
 
-        # Yield initial connection established event even with no messages
+        queue = asyncio.Queue[str]()
+        if task_id not in _task_subscribers:
+            _task_subscribers[task_id] = set()
+        _task_subscribers[task_id].add(queue)
+
         yield f"event: connected\n"
         yield f"data: {json.dumps({'type': 'connected', 'task_id': task_id, 'message_count': len(messages_list)})}\n\n"
 
     except Exception as e:
-        # Convert any exception to a string to yield as an event
         error_msg = str(e)
         yield f"event: error\n"
         yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
         return
 
-    # Yield initial connection established event
-    yield f"event: connected\n"
-    yield f"data: {json.dumps({'type': 'connected', 'task_id': task_id, 'message_count': len(messages_list)})}\n\n"
-
-    # Yield all existing messages
-    for i, msg in enumerate(messages_list):
-        yield f"event: message\n"
-        yield f"data: {json.dumps({'type': 'message', 'index': i, 'role': msg.role, 'content': msg.content})}\n\n"
-        await asyncio.sleep(0.1)  # Small delay to show streaming effect
-
-    # Track disconnect
     try:
-        # Wait for client disconnect or keep-alive timeout
+        for i, msg in enumerate(messages_list):
+            yield f"event: message\n"
+            yield f"data: {json.dumps({'type': 'message', 'index': i, 'role': msg.role, 'content': msg.content})}\n\n"
+            await asyncio.sleep(0.1)
+
         while True:
-            # Check if client disconnected
+            if task_id in _task_subscribers and queue is not None:
+                try:
+                    event_data = await asyncio.wait_for(queue.get(), timeout=0.5)
+                    yield event_data + "\n"
+                except asyncio.TimeoutError:
+                    pass
+
             if await request.is_disconnected():
                 yield f"event: disconnect\n"
                 yield f"data: {json.dumps({'type': 'disconnect', 'task_id': task_id})}\n\n"
                 break
 
-            # Send keep-alive comment every 25 seconds to maintain connection
             current_time = time.time()
-            if current_time % 25 < 1:  # Approximately every 25 seconds
+            if current_time % 25 < 1:
                 yield ": keep-alive\n\n"
 
-            # Small delay before next check
             await asyncio.sleep(1)
-
-    except Exception:
-        # Connection error or cleanup
-        yield f"event: error\n"
-        yield f"data: {json.dumps({'type': 'error', 'task_id': task_id, 'message': 'Stream ended'})}\n\n"
+    finally:
+        if queue is not None and task_id in _task_subscribers:
+            _task_subscribers[task_id].discard(queue)
+            if not _task_subscribers[task_id]:
+                del _task_subscribers[task_id]
 
 
 @router.get("/{task_id}/stream")
-async def stream_task_events_endpoint(task_id: str, request: Request):
+async def stream_task_events_endpoint(task_id: str, request: Request) -> StreamingResponse:
     """Stream task execution events as Server-Sent Events (SSE).
 
     This endpoint provides real-time updates for a task session using
@@ -167,14 +202,14 @@ async def stream_task_events_endpoint(task_id: str, request: Request):
             )
 
         # Define async generator inline
-        async def _stream_generator():
+        async def _stream_generator() -> AsyncGenerator[str, None]:
             async for event in stream_task_events(task_id, request):
                 yield event
 
         # Create generator instance
         gen = _stream_generator()
 
-        # Return StreamingResponse with the generator
+        # Return StreamingResponse with generator
         return StreamingResponse(
             gen,
             media_type="text/event-stream",

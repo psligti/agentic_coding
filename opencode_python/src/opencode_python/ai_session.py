@@ -5,6 +5,7 @@ Coordinates streaming requests to AI providers, processes responses,
 creates messages/parts, executes tools, manages tokens and costs.
 """
 
+import inspect
 import logging
 from typing import AsyncIterator, Optional, Dict, Any, List
 from decimal import Decimal
@@ -68,10 +69,21 @@ class AISession:
             raise ValueError(f"Provider not initialized for {self.provider_id}")
 
         models = await self.provider.get_models()
+        if not models:
+            raise ValueError(
+                f"No models available for provider {self.provider_id}. "
+                "Check API key configuration in OPENCODE_PYTHON_*_API_KEY or provider account settings."
+            )
+
         for model_info in models:
             if model_info.api_id == model:
                 return model_info
-        raise ValueError(f"Model {model} not found for provider {self.provider_id}")
+
+        available = ", ".join(sorted(m.api_id for m in models))
+        raise ValueError(
+            f"Model {model} not found for provider {self.provider_id}. "
+            f"Available models: {available}"
+        )
 
     async def _ensure_model_info(self) -> ModelInfo:
         """Ensure model_info is loaded"""
@@ -246,7 +258,19 @@ class AISession:
         )
 
         if self.session_manager:
-            user_msg_id = await self.session_manager.add_message(user_msg)
+            import inspect
+            sig = inspect.signature(self.session_manager.add_message)
+            params = list(sig.parameters.keys())
+            if len(params) == 1 and params[0] in ('message', 'msg'):
+                user_msg_id = await self.session_manager.add_message(user_msg)
+            elif len(params) == 3:
+                user_msg_id = await self.session_manager.add_message(
+                    user_msg.session_id,
+                    user_msg.role,
+                    user_msg.text
+                )
+            else:
+                raise ValueError(f"Unsupported add_message signature: {params}")
             messages = await self.session_manager.list_messages(self.session.id)
         else:
             user_msg_id = user_msg.id

@@ -24,6 +24,7 @@ from opencode_python.context.builder import ContextBuilder
 from opencode_python.agents.registry import AgentRegistry
 from opencode_python.agents.builtin import Agent
 from opencode_python.core.session_lifecycle import SessionLifecycle
+from opencode_python.core.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -170,8 +171,8 @@ class AgentRuntime:
             logger.info(f"Agent {agent.name} ready for execution")
 
             # Step 5: Create AISession with filtered tools
-            provider_id = options.get("provider", "anthropic")
-            model = options.get("model", "claude-sonnet-4-20250514")
+            provider_id = options.get("provider") or settings.get_default_provider().value
+            model = options.get("model") or settings.get_default_model(provider_id)
 
             # Determine model from agent or options
             if agent.model and isinstance(agent.model, dict):

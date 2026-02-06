@@ -63,7 +63,7 @@ export function useExecuteAgent(options: UseExecuteAgentOptions) {
     retryCountRef.current = 0
     onStatusChange?.('connecting')
 
-    const sseUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}/tasks/${sessionId}/stream`
+    const sseUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}/sessions/${sessionId}/stream`
 
     try {
       const eventSource = new EventSource(sseUrl)
@@ -180,14 +180,33 @@ export function useExecuteAgent(options: UseExecuteAgentOptions) {
       onStatusChange?.('connecting')
       setComposerSending(true)
 
-      await postApi(`/sessions/${sessionId}/execute`, {
+      const response = await postApi<{
+        session_id: string
+        agent_name: string
+        response: string
+        tools_used: string[]
+        duration: number
+        error?: string
+      }>(`/sessions/${sessionId}/execute`, {
         agent_name: agentName,
         user_message: userMessage,
         options,
       })
 
-      // Connect to SSE stream
-      connect()
+      if (response.response) {
+        const newMessage: Message = {
+          id: `msg-${Date.now()}`,
+          session_id: sessionId,
+          role: 'assistant',
+          text: response.response,
+          parts: [],
+          timestamp: Date.now(),
+        }
+        addMessage(sessionId, newMessage)
+      }
+
+      onStatusChange?.('idle')
+      setComposerSending(false)
     } catch (error) {
       onStatusChange?.('error')
       console.error('Failed to execute agent:', error)

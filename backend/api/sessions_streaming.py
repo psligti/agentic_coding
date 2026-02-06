@@ -3,7 +3,7 @@
 import asyncio
 import json
 import time
-from typing import Any, AsyncGenerator, Dict, Set
+from typing import Any, AsyncGenerator, Dict, Optional, Set
 
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
@@ -15,7 +15,7 @@ from api.telemetry import get_telemetry as get_telemetry_data
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
 
 
-_session_subscribers: dict[str, Set[asyncio.Queue]] = {}
+_session_subscribers: dict[str, Set[asyncio.Queue[str]]] = {}
 
 
 async def _get_current_theme_id(session_id: str) -> str:
@@ -31,7 +31,8 @@ async def _get_current_theme_id(session_id: str) -> str:
         client = await get_sdk_client()
         session = await client.get_session(session_id)
         if session and session.theme_id:
-            return session.theme_id
+            theme_id = session.theme_id
+            return theme_id if theme_id is not None else "aurora"
         return "aurora"
     except Exception:
         return "aurora"
@@ -82,6 +83,111 @@ async def _notify_theme_change(session_id: str, theme_id: str) -> None:
             pass
 
 
+async def _notify_agent_started(session_id: str, agent_name: str, task_id: Optional[str] = None) -> None:
+    """Broadcast agent started event to all subscribers of a session.
+
+    Args:
+        session_id: The session ID.
+        agent_name: The agent that started.
+        task_id: Optional task ID.
+    """
+    if session_id not in _session_subscribers:
+        return
+
+    event_data = json.dumps({
+        "type": "start",
+        "session_id": session_id,
+        "agent_name": agent_name,
+        "task_id": task_id,
+    })
+
+    for queue in _session_subscribers[session_id]:
+        try:
+            await queue.put(event_data)
+        except Exception:
+            pass
+
+
+async def _notify_agent_completed(session_id: str, agent_name: str, duration: float, task_id: Optional[str] = None) -> None:
+    """Broadcast agent completed event to all subscribers of a session.
+
+    Args:
+        session_id: The session ID.
+        agent_name: The agent that completed.
+        duration: Execution duration in seconds.
+        task_id: Optional task ID.
+    """
+    if session_id not in _session_subscribers:
+        return
+
+    event_data = json.dumps({
+        "type": "finish",
+        "session_id": session_id,
+        "agent_name": agent_name,
+        "duration": duration,
+        "task_id": task_id,
+    })
+
+    for queue in _session_subscribers[session_id]:
+        try:
+            await queue.put(event_data)
+        except Exception:
+            pass
+
+
+async def _notify_agent_failed(session_id: str, agent_name: str, error: str, duration: float, task_id: Optional[str] = None) -> None:
+    """Broadcast agent failed event to all subscribers of a session.
+
+    Args:
+        session_id: The session ID.
+        agent_name: The agent that failed.
+        error: Error message.
+        duration: Execution duration in seconds.
+        task_id: Optional task ID.
+    """
+    if session_id not in _session_subscribers:
+        return
+
+    event_data = json.dumps({
+        "type": "error",
+        "session_id": session_id,
+        "agent_name": agent_name,
+        "error": error,
+        "duration": duration,
+        "task_id": task_id,
+    })
+
+    for queue in _session_subscribers[session_id]:
+        try:
+            await queue.put(event_data)
+        except Exception:
+            pass
+
+
+async def _notify_session_updated(session_id: str, event_type: str, data: Dict[str, Any]) -> None:
+    """Broadcast generic session updated event to all subscribers.
+
+    Args:
+        session_id: The session ID.
+        event_type: Type of session event.
+        data: Event data payload.
+    """
+    if session_id not in _session_subscribers:
+        return
+
+    event_data = json.dumps({
+        "type": event_type,
+        "session_id": session_id,
+        **data,
+    })
+
+    for queue in _session_subscribers[session_id]:
+        try:
+            await queue.put(event_data)
+        except Exception:
+            pass
+
+
 async def _stream_session_events(
     session_id: str,
     request: Request,
@@ -117,7 +223,7 @@ async def _stream_session_events(
     _session_subscribers[session_id].add(queue)
 
     last_telemetry: Dict[str, Any] = {}
-    last_ping_time = 0
+    last_ping_time: float = 0.0
 
     try:
         while True:
@@ -163,7 +269,7 @@ async def _stream_session_events(
 
 
 @router.get("/{session_id}/stream")
-async def stream_session_events(session_id: str, request: Request):
+async def stream_session_events(session_id: str, request: Request) -> StreamingResponse:
     """Stream session theme events as Server-Sent Events (SSE).
 
     This endpoint provides real-time theme updates for a session using

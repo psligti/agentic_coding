@@ -6,7 +6,7 @@ that wrap SessionService with handler injection and callbacks.
 
 from __future__ import annotations
 
-from typing import Optional, Callable, Any, Dict
+from typing import Optional, Callable, Any, Dict, cast
 from pathlib import Path
 import asyncio
 
@@ -18,7 +18,7 @@ from opencode_python.interfaces.io import Notification
 from opencode_python.core.exceptions import OpenCodeError, SessionError
 from opencode_python.core.settings import get_storage_dir
 from opencode_python.agents.runtime import create_agent_runtime
-from opencode_python.core.agent_types import AgentResult
+from opencode_python.core.agent_types import AgentResult, SessionManagerLike
 from opencode_python.agents.registry import create_agent_registry
 from opencode_python.tools import create_builtin_registry
 from opencode_python.providers.registry import create_provider_registry
@@ -301,13 +301,20 @@ class OpenCodeAsyncClient:
 
         skills = options.get("skills", [])
         tools = create_builtin_registry()
+        manager_candidate = getattr(self._service, "_manager", None)
+        if manager_candidate is not None and asyncio.iscoroutinefunction(
+            getattr(manager_candidate, "get_session", None)
+        ):
+            session_manager = cast(SessionManagerLike, manager_candidate)
+        else:
+            session_manager = cast(SessionManagerLike, self._service)
 
         try:
             return await self._runtime.execute_agent(
                 agent_name=agent_name,
                 session_id=session_id,
                 user_message=user_message,
-                session_manager=self._service,
+                session_manager=session_manager,
                 tools=tools,
                 skills=skills,
                 options=options,
@@ -709,4 +716,3 @@ class OpenCodeSyncClient:
     def on_session_archived(self, callback: Any) -> None:
         """Register callback for session archive events (sync)."""
         self._async_client.on_session_archived(callback)
-

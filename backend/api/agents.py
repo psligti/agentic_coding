@@ -1,18 +1,13 @@
 """Agent execution endpoints for WebApp API."""
 
 import asyncio
-import os
-import tempfile
 import uuid
-from datetime import datetime
-from pathlib import Path
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Body, HTTPException, status
 from pydantic import BaseModel
 
-from opencode_python.sdk import OpenCodeAsyncClient
-from opencode_python.core.config import SDKConfig
+from api.sessions import get_sdk_client
 
 
 class ExecuteAgentRequest(BaseModel):
@@ -31,7 +26,6 @@ class ExecuteAgentResponse(BaseModel):
     session_id: str
 
 
-_api_storage_dir = None
 _background_tasks: Dict[str, asyncio.Task] = {}
 task_status: Dict[str, str] = {}
 
@@ -70,36 +64,6 @@ async def list_agents() -> list[Dict[str, Any]]:
         )
 
 
-async def get_sdk_client() -> OpenCodeAsyncClient:
-    """Get SDK client instance with shared storage.
-
-    Returns:
-        OpenCodeAsyncClient: Initialized SDK client.
-
-    Raises:
-        HTTPException: If client initialization fails.
-    """
-    global _api_storage_dir
-
-    try:
-        if _api_storage_dir is None:
-            _api_storage_dir = os.path.join(tempfile.gettempdir(), "api_agents")
-
-        storage_path = Path(_api_storage_dir)
-        project_dir = Path(os.environ.get("WEBAPP_PROJECT_DIR", Path.cwd()))
-        config = SDKConfig(
-            storage_path=storage_path,
-            project_dir=project_dir,
-        )
-        client = OpenCodeAsyncClient(config=config)
-        return client
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to initialize SDK client: {str(e)}",
-        )
-
-
 async def execute_agent_background(task_id: str, agent_id: str, session_id: str, message: str, options: Optional[Dict[str, Any]]):
     """Execute agent in background and update task status.
 
@@ -118,7 +82,7 @@ async def execute_agent_background(task_id: str, agent_id: str, session_id: str,
             agent_name=agent_id,
             session_id=session_id,
             user_message=message,
-            options=options
+            options=options or {}
         )
 
         task_status[task_id] = "completed" if result.success else "failed"

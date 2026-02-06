@@ -16,6 +16,7 @@ from opencode_python.core.models import (
     TokenUsage,
 )
 from opencode_python.tools.framework import ToolRegistry
+from opencode_python.providers.base import ModelInfo
 
 
 @runtime_checkable
@@ -55,10 +56,9 @@ class ProviderLike(Protocol):
 
     async def stream(
         self,
-        model: str,
+        model: "ModelInfo",
         messages: List[Dict[str, Any]],
         tools: Optional[List[Dict[str, Any]]] = None,
-        system: Optional[str] = None,
         **options: Any,
     ):
         """

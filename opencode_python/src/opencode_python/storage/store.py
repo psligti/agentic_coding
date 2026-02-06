@@ -151,15 +151,31 @@ class MessageStorage(Storage):
         return message
 
     async def list_messages(self, session_id: str, reverse: bool = True) -> List[Dict[str, Any]]:
-        """List all messages for a session"""
+        """List all messages for a session.
+
+        Supports both legacy flat `created` and current nested `time.created`
+        timestamp shapes.
+        """
         keys = await self.list(["message", session_id])
         messages = []
         for key in keys:
             data = await self.read(key)
             if data:
                 messages.append(data)
-        # Sort by created timestamp
-        messages.sort(key=lambda m: m["created"], reverse=reverse)
+
+        def _created_ts(message: Dict[str, Any]) -> float:
+            created = message.get("created")
+            if isinstance(created, (int, float)):
+                return float(created)
+            time_data = message.get("time")
+            if isinstance(time_data, dict):
+                nested_created = time_data.get("created")
+                if isinstance(nested_created, (int, float)):
+                    return float(nested_created)
+            return 0.0
+
+        # Sort by created timestamp (newest first by default)
+        messages.sort(key=_created_ts, reverse=reverse)
         return messages
 
 

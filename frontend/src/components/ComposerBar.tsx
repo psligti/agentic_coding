@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Send } from 'lucide-react'
-import { useCurrentSession, useComposer, useSetComposerDraft, useSetComposerSending, useAgentsState, useSelectedAgent, useSetSelectedAgent } from '../store'
-import { useMessages } from '../hooks/useMessages'
+import { useCurrentSession, useComposer, useSetComposerDraft, useSetComposerSending, useAgentsState, useSelectedAgent, useSetSelectedAgent, useAddMessage } from '../store'
+import { useExecuteAgent } from '../hooks/useExecuteAgent'
+import type { Message } from '../store'
 
 const MAX_LINES = 13
 export function ComposerBar() {
@@ -14,10 +15,17 @@ export function ComposerBar() {
   const { draft: storeDraft, isSending } = useComposer()
   const setComposerDraft = useSetComposerDraft()
   const setComposerSending = useSetComposerSending()
-  const { createUserMessage } = useMessages()
+  const addMessage = useAddMessage()
   const agents = useAgentsState()
   const selectedAgent = useSelectedAgent()
   const setSelectedAgent = useSetSelectedAgent()
+
+  const { execute } = useExecuteAgent({
+    sessionId: currentSession?.id || '',
+    onStatusChange: (status) => {
+      setComposerSending(status !== 'idle')
+    },
+  })
 
   // Sync store draft to local state when it changes
   useEffect(() => {
@@ -84,15 +92,29 @@ export function ComposerBar() {
 
   const handleSend = async () => {
     if (!localDraft.trim() || isSending || !currentSession) return
-    setComposerSending(true)
+    if (!selectedAgent) {
+      console.error('No agent selected')
+      return
+    }
+
+    const userMessage: Message = {
+      id: `msg-${Date.now()}`,
+      session_id: currentSession.id,
+      role: 'user',
+      text: localDraft,
+      parts: [],
+      timestamp: Date.now(),
+    }
+    addMessage(currentSession.id, userMessage)
+
+    setComposerDraft('')
+    setLocalDraft('')
+    setCurrentHeight(48)
+
     try {
-      await createUserMessage(currentSession.id, localDraft)
-      setComposerDraft('')
-      setLocalDraft('')
-      setCurrentHeight(48)
+      await execute(selectedAgent, localDraft)
     } catch (error) {
-      console.error('Failed to send message:', error)
-    } finally {
+      console.error('Failed to execute agent:', error)
       setComposerSending(false)
     }
   }
